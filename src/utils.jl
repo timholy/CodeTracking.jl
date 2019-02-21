@@ -14,3 +14,10 @@ function isfuncexpr(ex)
 end
 
 fileline(lin::LineInfoNode) = String(lin.file), lin.line
+
+function basepath(id::PkgId)
+    id.name ∈ ("Main", "Base", "Core") && return ""
+    loc = Base.locate_package(id)
+    loc === nothing && return ""
+    return dirname(dirname(loc))
+end

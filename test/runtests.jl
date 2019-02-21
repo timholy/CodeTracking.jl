@@ -19,4 +19,8 @@ include("script.jl")
     @test src == """
     f2(x, y) = x + y
     """
+
+    info = CodeTracking.PkgFiles(Base.PkgId(CodeTracking))
+    @test Base.PkgId(info) === info.id
+    @test CodeTracking.basedir(info) == dirname(@__DIR__)
 end

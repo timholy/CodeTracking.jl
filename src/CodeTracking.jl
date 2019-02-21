@@ -1,5 +1,6 @@
 module CodeTracking
 
+using Base: PkgId
 using Core: LineInfoNode
 
 export whereis, definition, pkgfiles
@@ -69,12 +70,19 @@ definition(method::Method, ::Type{Expr}) = get(method_definitions, method.sig, n
 definition(method::Method) = definition(method, Expr)
 
 """
-    files = pkgfiles(mod::Module)
+    info = pkgfiles(id::PkgId)
 
-Return a list of the files that were loaded to define `mod`.
+Return a [`PkgFiles`](@ref) structure with information about the files that define package `id`.
+Returns `nothing` if `id` has not been loaded.
 """
-function pkgfiles(mod::Module)
-    error("not implemented")
-end
+pkgfiles(id::PkgId) = get(_pkgfiles, id, nothing)
+
+"""
+    info = pkgfiles(mod::Module)
+
+Return a [`PkgFiles`](@ref) structure with information about the files that were loaded to
+define the package that defined `mod`.
+"""
+pkgfiles(mod::Module) = pkgfiles(PkgId(mod))
 
 end # module
