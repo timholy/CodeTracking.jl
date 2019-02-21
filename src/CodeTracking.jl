@@ -65,7 +65,17 @@ end
 
 Return an expression that defines `method`.
 """
-definition(method::Method, ::Type{Expr}) = get(method_definitions, method.sig, nothing)
+function definition(method::Method, ::Type{Expr})
+    def = get(method_definitions, method.sig, nothing)
+    if def === nothing
+        f = method_lookup_callback[]
+        if f !== nothing
+            Base.invokelatest(f, method)
+        end
+        def = get(method_definitions, method.sig, nothing)
+    end
+    return def === nothing ? nothing : copy(def)
+end
 
 definition(method::Method) = definition(method, Expr)
 

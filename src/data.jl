@@ -31,3 +31,5 @@ const method_locations = IdDict{Type,LineInfoNode}()
 const method_definitions = IdDict{Type,Expr}()
 
 const _pkgfiles = Dict{PkgId,PkgFiles}()
+
+const method_lookup_callback = Ref{Any}(nothing)
