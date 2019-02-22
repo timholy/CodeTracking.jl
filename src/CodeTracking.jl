@@ -3,6 +3,7 @@ module CodeTracking
 using Base: PkgId
 using Core: LineInfoNode
 
+export PkgFiles
 export whereis, definition, pkgfiles
 
 include("data.jl")

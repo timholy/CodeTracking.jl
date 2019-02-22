@@ -26,6 +26,13 @@ Base.PkgId(info::PkgFiles) = info.id
 srcfiles(info::PkgFiles) = info.files
 basedir(info::PkgFiles) = info.basedir
 
+function Base.show(io::IO, info::PkgFiles)
+    println(io, "PkgFiles(", info.id, "):")
+    println(io, "  basedir: ", info.basedir)
+    print(io, "  files: ")
+    show(io, info.files)
+end
+
 const method_locations = IdDict{Type,LineInfoNode}()
 
 const method_definitions = IdDict{Type,Expr}()
