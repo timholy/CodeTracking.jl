@@ -1,5 +1,6 @@
 using CodeTracking
 using Test
+# Note: ColorTypes needs to be installed, but note the absence of `using`
 
 include("script.jl")
 
@@ -28,4 +29,7 @@ include("script.jl")
     show(io, info)
     str = String(take!(io))
     @test startswith(str, "PkgFiles(CodeTracking [da1fd8a2-8d9e-5ec2-8556-3022fb5608a2]):\n  basedir:")
+
+    @test pkgfiles("ColorTypes") === nothing
+    @test_throws ErrorException pkgfiles("NotAPkg")
 end

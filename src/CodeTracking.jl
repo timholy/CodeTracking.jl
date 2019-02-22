@@ -2,6 +2,7 @@ module CodeTracking
 
 using Base: PkgId
 using Core: LineInfoNode
+using UUIDs
 
 export PkgFiles
 export whereis, definition, pkgfiles
@@ -81,11 +82,20 @@ end
 definition(method::Method) = definition(method, Expr)
 
 """
-    info = pkgfiles(id::PkgId)
+    info = pkgfiles(name::AbstractString)
+    info = pkgfiles(name::AbstractString, uuid::UUID)
 
-Return a [`PkgFiles`](@ref) structure with information about the files that define package `id`.
-Returns `nothing` if `id` has not been loaded.
+Return a [`PkgFiles`](@ref) structure with information about the files that define the package
+specified by `name` and `uuid`.
+Returns `nothing` if this package has not been loaded.
 """
+pkgfiles(name::AbstractString, uuid::UUID) = pkgfiles(PkgId(uuid, name))
+function pkgfiles(name::AbstractString)
+    project = Base.active_project()
+    uuid = Base.project_deps_get(project, name)
+    uuid == false && error("no package ", name, " recognized")
+    return pkgfiles(name, uuid)
+end
 pkgfiles(id::PkgId) = get(_pkgfiles, id, nothing)
 
 """
