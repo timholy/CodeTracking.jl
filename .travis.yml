@@ -1,0 +1,25 @@
+language: julia
+
+os:
+  - linux
+  - osx
+
+julia:
+  - 1.0
+  - 1.1
+  - nightly
+
+branches:
+  only:
+  - master
+  - /^v\d+\.\d+(\.\d+)?(-\S*)?$/
+
+notifications:
+  email: false
+
+script:
+    - export JULIA_PROJECT=""
+    - julia --project -e 'using Pkg; Pkg.build(); Pkg.test();'
+
+after_success:
+  - julia -e 'import Pkg; Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
