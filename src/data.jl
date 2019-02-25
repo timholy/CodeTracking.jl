@@ -28,7 +28,7 @@ basedir(info::PkgFiles) = info.basedir
 
 function Base.show(io::IO, info::PkgFiles)
     println(io, "PkgFiles(", info.id, "):")
-    println(io, "  basedir: ", info.basedir)
+    println(io, "  basedir: \"", info.basedir, '"')
     print(io, "  files: ")
     show(io, info.files)
 end
