@@ -7,8 +7,20 @@ using UUIDs
 export PkgFiles
 export whereis, definition, pkgfiles
 
-include("data.jl")
+include("pkgfiles.jl")
 include("utils.jl")
+
+### Global storage
+
+# These values get populated by Revise
+
+const method_info = IdDict{Type,Tuple{LineNumberNode,Expr}}()
+
+const _pkgfiles = Dict{PkgId,PkgFiles}()
+
+const method_lookup_callback = Ref{Any}(nothing)
+
+### Public API
 
 """
     filepath, line = whereis(method::Method)
