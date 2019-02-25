@@ -33,9 +33,7 @@ function Base.show(io::IO, info::PkgFiles)
     show(io, info.files)
 end
 
-const method_locations = IdDict{Type,LineInfoNode}()
-
-const method_definitions = IdDict{Type,Expr}()
+const method_info = IdDict{Type,Tuple{LineNumberNode,Expr}}()
 
 const _pkgfiles = Dict{PkgId,PkgFiles}()
 

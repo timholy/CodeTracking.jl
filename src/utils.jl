@@ -13,7 +13,11 @@ function isfuncexpr(ex)
     return false
 end
 
-fileline(lin::LineInfoNode) = String(lin.file), lin.line
+fileline(lin::LineInfoNode)   = String(lin.file), lin.line
+fileline(lnn::LineNumberNode) = String(lnn.file), lnn.line
+
+# This is piracy, but it's not ambiguous in terms of what it should do
+Base.convert(::Type{LineNumberNode}, lin::LineInfoNode) = LineNumberNode(lin.line, lin.file)
 
 function basepath(id::PkgId)
     id.name ∈ ("Main", "Base", "Core") && return ""
