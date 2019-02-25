@@ -7,8 +7,20 @@ using UUIDs
 export PkgFiles
 export whereis, definition, pkgfiles
 
-include("data.jl")
+include("pkgfiles.jl")
 include("utils.jl")
+
+### Global storage
+
+# These values get populated by Revise
+
+const method_info = IdDict{Type,Tuple{LineNumberNode,Expr}}()
+
+const _pkgfiles = Dict{PkgId,PkgFiles}()
+
+const method_lookup_callback = Ref{Any}(nothing)
+
+### Public API
 
 """
     filepath, line = whereis(method::Method)
@@ -17,11 +29,11 @@ Return the file and line of the definition of `method`. `line`
 is the first line of the method's body.
 """
 function whereis(method::Method)
-    lin = get(method_locations, method.sig, nothing)
+    lin = get(method_info, method.sig, nothing)
     if lin === nothing
         file, line = String(method.file), method.line
     else
-        file, line = fileline(lin)
+        file, line = fileline(lin[1])
     end
     if !isabspath(file)
         # This is a Base or Core method
@@ -68,15 +80,15 @@ end
 Return an expression that defines `method`.
 """
 function definition(method::Method, ::Type{Expr})
-    def = get(method_definitions, method.sig, nothing)
+    def = get(method_info, method.sig, nothing)
     if def === nothing
         f = method_lookup_callback[]
         if f !== nothing
             Base.invokelatest(f, method)
         end
-        def = get(method_definitions, method.sig, nothing)
+        def = get(method_info, method.sig, nothing)
     end
-    return def === nothing ? nothing : copy(def)
+    return def === nothing ? nothing : copy(def[2])
 end
 
 definition(method::Method) = definition(method, Expr)

@@ -1,5 +1,3 @@
-# The variables here get populated by Revise.jl.
-
 """
 PkgFiles encodes information about the current location of a package.
 Fields:
@@ -28,15 +26,7 @@ basedir(info::PkgFiles) = info.basedir
 
 function Base.show(io::IO, info::PkgFiles)
     println(io, "PkgFiles(", info.id, "):")
-    println(io, "  basedir: ", info.basedir)
+    println(io, "  basedir: \"", info.basedir, '"')
     print(io, "  files: ")
     show(io, info.files)
 end
-
-const method_locations = IdDict{Type,LineInfoNode}()
-
-const method_definitions = IdDict{Type,Expr}()
-
-const _pkgfiles = Dict{PkgId,PkgFiles}()
-
-const method_lookup_callback = Ref{Any}(nothing)
