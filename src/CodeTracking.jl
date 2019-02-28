@@ -4,7 +4,6 @@ using Base: PkgId
 using Core: LineInfoNode
 using UUIDs
 
-export PkgFiles
 export whereis, definition, pkgfiles
 
 include("pkgfiles.jl")
@@ -97,8 +96,8 @@ definition(method::Method) = definition(method, Expr)
     info = pkgfiles(name::AbstractString)
     info = pkgfiles(name::AbstractString, uuid::UUID)
 
-Return a [`PkgFiles`](@ref) structure with information about the files that define the package
-specified by `name` and `uuid`.
+Return a [`CodeTracking.PkgFiles`](@ref) structure with information about the files that
+define the package specified by `name` and `uuid`.
 Returns `nothing` if this package has not been loaded.
 """
 pkgfiles(name::AbstractString, uuid::UUID) = pkgfiles(PkgId(uuid, name))
@@ -113,8 +112,8 @@ pkgfiles(id::PkgId) = get(_pkgfiles, id, nothing)
 """
     info = pkgfiles(mod::Module)
 
-Return a [`PkgFiles`](@ref) structure with information about the files that were loaded to
-define the package that defined `mod`.
+Return a [`CodeTracking.PkgFiles`](@ref) structure with information about the files that
+were loaded to define the package that defined `mod`.
 """
 pkgfiles(mod::Module) = pkgfiles(PkgId(mod))
 

@@ -21,7 +21,7 @@ include("script.jl")
     f2(x, y) = x + y
     """
 
-    info = PkgFiles(Base.PkgId(CodeTracking))
+    info = CodeTracking.PkgFiles(Base.PkgId(CodeTracking))
     @test Base.PkgId(info) === info.id
     @test CodeTracking.basedir(info) == dirname(@__DIR__)
 
