@@ -1,6 +1,6 @@
 using CodeTracking
 using Test
-# Note: ColorTypes needs to be installed, but note the absence of `using`
+# Note: ColorTypes needs to be installed, but note the intentional absence of `using ColorTypes`
 
 include("script.jl")
 
