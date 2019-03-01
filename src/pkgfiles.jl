@@ -25,8 +25,15 @@ srcfiles(info::PkgFiles) = info.files
 basedir(info::PkgFiles) = info.basedir
 
 function Base.show(io::IO, info::PkgFiles)
-    println(io, "PkgFiles(", info.id, "):")
-    println(io, "  basedir: \"", info.basedir, '"')
-    print(io, "  files: ")
-    show(io, info.files)
+    compact = get(io, :compact, false)
+    if compact
+        print(io, "PkgFiles(", info.id.name, ", ", info.basedir, ", ")
+        show(io, info.files)
+        print(io, ')')
+    else
+        println(io, "PkgFiles(", info.id, "):")
+        println(io, "  basedir: \"", info.basedir, '"')
+        print(io, "  files: ")
+        show(io, info.files)
+    end
 end

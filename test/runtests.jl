@@ -1,6 +1,6 @@
 using CodeTracking
 using Test
-# Note: ColorTypes needs to be installed, but note the absence of `using`
+# Note: ColorTypes needs to be installed, but note the intentional absence of `using ColorTypes`
 
 include("script.jl")
 
@@ -21,7 +21,7 @@ include("script.jl")
     f2(x, y) = x + y
     """
 
-    info = PkgFiles(Base.PkgId(CodeTracking))
+    info = CodeTracking.PkgFiles(Base.PkgId(CodeTracking))
     @test Base.PkgId(info) === info.id
     @test CodeTracking.basedir(info) == dirname(@__DIR__)
 
