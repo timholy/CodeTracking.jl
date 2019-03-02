@@ -3,7 +3,7 @@
 CodeTracking is a minimal package designed to work with (a future version of)
 [Revise.jl](https://github.com/timholy/Revise.jl).
 Its main purpose is to support packages that need to interact with code that might move
-around as it's edited.
+around as it gets edited.
 
 CodeTracking is a very lightweight dependency.
 
@@ -23,7 +23,10 @@ In this (ficticious) example, `sum` moved because I deleted a few lines higher i
 these didn't affect the functionality of `sum` (so we didn't need to redefine and recompile it),
 but it does change the starting line number of the file at which this method appears.
 
-Other features:
+Other methods of `whereis` allow you to obtain the current position corresponding to a single
+statement inside a method; see `?whereis` for details.
+
+CodeTracking can also be used to find out what files define a particular package:
 
 ```julia
 julia> using CodeTracking, ColorTypes
@@ -32,7 +35,11 @@ julia> pkgfiles(ColorTypes)
 PkgFiles(ColorTypes [3da002f7-5984-5a60-b8a6-cbb66c0b333f]):
   basedir: /home/tim/.julia/packages/ColorTypes/BsAWO
   files: ["src/ColorTypes.jl", "src/types.jl", "src/traits.jl", "src/conversions.jl", "src/show.jl", "src/operations.jl"]
+```
 
+or to extract the expression that defines a method:
+
+```julia
 julia> m = @which red(RGB(1,1,1))
 red(c::AbstractRGB) in ColorTypes at /home/tim/.julia/packages/ColorTypes/BsAWO/src/traits.jl:14
 

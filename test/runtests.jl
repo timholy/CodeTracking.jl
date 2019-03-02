@@ -7,7 +7,17 @@ include("script.jl")
 @testset "CodeTracking.jl" begin
     m = first(methods(f1))
     file, line = whereis(m)
-    @test file == normpath(joinpath(@__DIR__, "script.jl"))
+    scriptpath = normpath(joinpath(@__DIR__, "script.jl"))
+    @test file == scriptpath
+    @test line == 3
+    trace = try
+        call_throws()
+    catch
+        stacktrace(catch_backtrace())
+    end
+    @test whereis(trace[2]) == (scriptpath, 10)
+    @test whereis(trace[3]) === nothing
+
     src = definition(m, String)
     @test src == """
     function f1(x, y)
