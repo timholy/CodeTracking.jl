@@ -42,6 +42,32 @@ function whereis(method::Method)
 end
 
 """
+    loc = whereis(sf::StackFrame)
+
+Return location information for a single frame of a stack trace.
+If `sf` corresponds to a frame that was inlined, `loc` will be `nothing`.
+Otherwise `loc` will be `(filepath, line)`.
+"""
+function whereis(sf::StackTraces.StackFrame)
+    sf.linfo === nothing && return nothing
+    return whereis(sf, sf.linfo.def)
+end
+
+"""
+    filepath, line = whereis(lineinfo, method::Method)
+
+Return the file and line number associated with a specific statement in `method`.
+`lineinfo.line` should contain the line number of the statement at the time `method`
+was compiled. The current location is returned.
+"""
+function whereis(lineinfo, method::Method)
+    file, line1 = whereis(method)
+    return file, lineinfo.line-method.line+line1
+end
+
+
+
+"""
     src = definition(method::Method, String)
 
 Return a string with the code that defines `method`.
