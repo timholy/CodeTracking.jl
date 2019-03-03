@@ -35,10 +35,13 @@ function whereis(method::Method)
         file, line = fileline(lin[1])
     end
     if !isabspath(file)
-        # This is a Base or Core method
-        file = Base.find_source_file(file)
+        # This may be a Base or Core method
+        newfile = Base.find_source_file(file)
+        if isa(newfile, AbstractString)
+            file = normpath(newfile)
+        end
     end
-    return normpath(file), line
+    return file, line
 end
 
 """
