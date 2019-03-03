@@ -13,6 +13,26 @@ function isfuncexpr(ex)
     return false
 end
 
+function linerange(def::Expr)
+    start, haslinestart = findline(def, identity)
+    stop, haslinestop  = findline(def, Iterators.reverse)
+    (haslinestart & haslinestop) && return start:stop
+    return nothing
+end
+linerange(arg) = linerange(convert(Expr, arg))  # Handle Revise's RelocatableExpr
+
+function findline(ex, order)
+    ex.head == :line && return ex.args[1], true
+    for a in order(ex.args)
+        a isa LineNumberNode && return a.line, true
+        if a isa Expr
+            ln, hasline = findline(a, order)
+            hasline && return ln, true
+        end
+    end
+    return 0, false
+end
+
 fileline(lin::LineInfoNode)   = String(lin.file), lin.line
 fileline(lnn::LineNumberNode) = String(lnn.file), lnn.line
 

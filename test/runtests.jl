@@ -1,3 +1,5 @@
+# Note: some of CodeTracking's functionality can only be tested by Revise
+
 using CodeTracking
 using Test
 # Note: ColorTypes needs to be installed, but note the intentional absence of `using ColorTypes`

@@ -4,7 +4,7 @@ using Base: PkgId
 using Core: LineInfoNode
 using UUIDs
 
-export whereis, definition, pkgfiles
+export whereis, definition, pkgfiles, signatures_at
 
 include("pkgfiles.jl")
 include("utils.jl")
@@ -18,6 +18,7 @@ const method_info = IdDict{Type,Tuple{LineNumberNode,Expr}}()
 const _pkgfiles = Dict{PkgId,PkgFiles}()
 
 const method_lookup_callback = Ref{Any}(nothing)
+const expressions_callback   = Ref{Any}(nothing)
 
 ### Public API
 
@@ -68,7 +69,50 @@ function whereis(lineinfo, method::Method)
     return file, lineinfo.line-method.line+line1
 end
 
+"""
+    sigs = signatures_at(filename, line)
 
+Return the signatures of all methods whose definition spans the specified location.
+`line` must correspond to a line in the method body (not the signature or final `end`).
+
+Returns `nothing` if there are no methods at that location.
+"""
+function signatures_at(filename::AbstractString, line::Integer)
+    for (id, pkgfls) in _pkgfiles
+        if startswith(filename, basedir(pkgfls))
+            return signatures_at(id, relpath(filename, basedir(pkgfls)), line)
+        end
+    end
+    error("$filename not found, perhaps the package is not loaded")
+end
+
+"""
+    sigs = signatures_at(mod::Module, relativepath, line)
+
+For a package that defines module `mod`, return the signatures of all methods whose definition
+spans the specified location. `relativepath` indicates the path of the file relative to
+the packages top-level directory, e.g., `"src/utils.jl"`.
+`line` must correspond to a line in the method body (not the signature or final `end`).
+
+Returns `nothing` if there are no methods at that location.
+"""
+function signatures_at(mod::Module, relpath::AbstractString, line::Integer)
+    id = PkgId(mod)
+    return signatures_at(id, relpath, line)
+end
+
+function signatures_at(id::PkgId, relpath::AbstractString, line::Integer)
+    expressions = expressions_callback[]
+    expressions === nothing && error("cannot look up methods by line number, try `using Revise` before loading other packages")
+    for (mod, exsigs) in Base.invokelatest(expressions, id, relpath)
+        for (ex, sigs) in exsigs
+            lr = linerange(ex)
+            lr === nothing && continue
+            line ∈ lr && return sigs
+        end
+    end
+    return nothing
+end
 
 """
     src = definition(method::Method, String)
