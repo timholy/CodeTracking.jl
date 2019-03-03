@@ -42,4 +42,10 @@ include("script.jl")
 
     @test pkgfiles("ColorTypes") === nothing
     @test_throws ErrorException pkgfiles("NotAPkg")
+
+    # Test that definitions at the REPL work with `whereis`
+    ex = Base.parse_input_line("replfunc(x) = 1"; filename="REPL[1]")
+    eval(ex)
+    m = first(methods(replfunc))
+    @test whereis(m) == ("REPL[1]", 1)
 end
