@@ -53,6 +53,18 @@ julia> definition(m, String)
 "red(c::AbstractRGB   ) = c.r\n"
 ```
 
+or to find the method-signatures at a particular location:
+
+```julia
+julia> signatures_at(ColorTypes, "src/traits.jl", 14)
+1-element Array{Any,1}:
+ Tuple{typeof(red),AbstractRGB}
+
+julia> signatures_at("/home/tim/.julia/packages/ColorTypes/BsAWO/src/traits.jl", 14)
+1-element Array{Any,1}:
+ Tuple{typeof(red),AbstractRGB}
+```
+
 ## A few details
 
 CodeTracking won't do anything *useful* unless the user is also running Revise,
