@@ -79,8 +79,12 @@ Returns `nothing` if there are no methods at that location.
 """
 function signatures_at(filename::AbstractString, line::Integer)
     for (id, pkgfls) in _pkgfiles
-        if startswith(filename, basedir(pkgfls))
-            return signatures_at(id, relpath(filename, basedir(pkgfls)), line)
+        if startswith(filename, basedir(pkgfls)) || id.name == "Main"
+            bdir = basedir(pkgfls)
+            rpath = isempty(bdir) ? filename : relpath(filename, bdir)
+            if rpath ∈ pkgfls.files
+                return signatures_at(id, rpath, line)
+            end
         end
     end
     error("$filename not found, perhaps the package is not loaded")
