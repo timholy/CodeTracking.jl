@@ -1,7 +1,7 @@
 # CodeTracking
 
-CodeTracking is a minimal package designed to work with (a future version of)
-[Revise.jl](https://github.com/timholy/Revise.jl).
+CodeTracking is a minimal package designed to work with
+[Revise.jl](https://github.com/timholy/Revise.jl) (for versions after v1.1.0).
 Its main purpose is to support packages that need to interact with code that might move
 around as it gets edited.
 
@@ -78,8 +78,3 @@ CodeTracking is designed to be the new "query" part of Revise.jl.
 The aim is to have a very simple API that developers can learn in a few minutes and then
 incorporate into their own packages; its lightweight nature means that they potentially gain
 a lot of functionality without being forced to take a big hit in startup time.
-
-## Status
-
-If you want CodeTracking to do anything useful, currently you have to check out the `teh/codetracking`
-branch of Revise.
