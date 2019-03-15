@@ -3,6 +3,7 @@ module CodeTracking
 using Base: PkgId
 using Core: LineInfoNode
 using UUIDs
+using InteractiveUtils
 
 export whereis, definition, pkgfiles, signatures_at
 
@@ -38,7 +39,7 @@ function whereis(method::Method)
         lin = get(method_info, method.sig, nothing)
     end
     if lin === nothing
-        file, line = String(method.file), method.line
+        file, line = maybe_fixup_stdlib_path(String(method.file)), method.line
     else
         file, line = fileline(lin[1])
     end
