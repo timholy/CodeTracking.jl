@@ -65,6 +65,16 @@ julia> signatures_at("/home/tim/.julia/packages/ColorTypes/BsAWO/src/traits.jl",
  Tuple{typeof(red),AbstractRGB}
 ```
 
+CodeTracking also helps correcting for [Julia issue #26314](https://github.com/JuliaLang/julia/issues/26314):
+
+```
+julia> @which uuid1()
+uuid1() in UUIDs at C:\cygwin\home\Administrator\buildbot\worker\package_win64\build\usr\share\julia\stdlib\v1.1\UUIDs\src\UUIDs.jl:50
+
+julia> CodeTracking.whereis(@which uuid1())
+("C:\\Users\\SomeOne\\AppData\\Local\\Julia-1.1.0\\share\\julia\\stdlib\\v1.1\\UUIDs\\src\\UUIDs.jl", 50)
+```
+
 ## A few details
 
 CodeTracking won't do anything *useful* unless the user is also running Revise,
