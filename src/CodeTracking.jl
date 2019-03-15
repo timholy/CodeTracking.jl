@@ -31,6 +31,13 @@ is the first line of the method's body.
 function whereis(method::Method)
     lin = get(method_info, method.sig, nothing)
     if lin === nothing
+        f = method_lookup_callback[]
+        if f !== nothing
+            Base.invokelatest(f, method)
+        end
+        lin = get(method_info, method.sig, nothing)
+    end
+    if lin === nothing
         file, line = String(method.file), method.line
     else
         file, line = fileline(lin[1])
@@ -193,5 +200,9 @@ Return a [`CodeTracking.PkgFiles`](@ref) structure with information about the fi
 were loaded to define the package that defined `mod`.
 """
 pkgfiles(mod::Module) = pkgfiles(PkgId(mod))
+
+if ccall(:jl_generating_output, Cint, ()) == 1
+    precompile(Tuple{typeof(setindex!), Dict{PkgId,PkgFiles}, PkgFiles, PkgId})
+end
 
 end # module
