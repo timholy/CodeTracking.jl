@@ -201,4 +201,8 @@ were loaded to define the package that defined `mod`.
 """
 pkgfiles(mod::Module) = pkgfiles(PkgId(mod))
 
+if ccall(:jl_generating_output, Cint, ()) == 1
+    precompile(Tuple{typeof(setindex!), Dict{PkgId,PkgFiles}, PkgFiles, PkgId})
+end
+
 end # module
