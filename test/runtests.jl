@@ -50,4 +50,8 @@ include("script.jl")
     eval(ex)
     m = first(methods(replfunc))
     @test whereis(m) == ("REPL[1]", 1)
+
+    # Test with broken lookup
+    CodeTracking.method_lookup_callback[] = m -> error("oops")
+    @test whereis(m) == ("REPL[1]", 1)
 end
