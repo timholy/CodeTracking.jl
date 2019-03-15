@@ -33,9 +33,12 @@ function whereis(method::Method)
     if lin === nothing
         f = method_lookup_callback[]
         if f !== nothing
-            Base.invokelatest(f, method)
+            try
+                Base.invokelatest(f, method)
+                lin = get(method_info, method.sig, nothing)
+            catch
+            end
         end
-        lin = get(method_info, method.sig, nothing)
     end
     if lin === nothing
         file, line = String(method.file), method.line
@@ -115,12 +118,15 @@ end
 function signatures_at(id::PkgId, relpath::AbstractString, line::Integer)
     expressions = expressions_callback[]
     expressions === nothing && error("cannot look up methods by line number, try `using Revise` before loading other packages")
-    for (mod, exsigs) in Base.invokelatest(expressions, id, relpath)
-        for (ex, sigs) in exsigs
-            lr = linerange(ex)
-            lr === nothing && continue
-            line ∈ lr && return sigs
+    try
+        for (mod, exsigs) in Base.invokelatest(expressions, id, relpath)
+            for (ex, sigs) in exsigs
+                lr = linerange(ex)
+                lr === nothing && continue
+                line ∈ lr && return sigs
+            end
         end
+    catch
     end
     return nothing
 end
@@ -167,9 +173,12 @@ function definition(method::Method, ::Type{Expr})
     if def === nothing
         f = method_lookup_callback[]
         if f !== nothing
-            Base.invokelatest(f, method)
+            try
+                Base.invokelatest(f, method)
+                def = get(method_info, method.sig, nothing)
+            catch
+            end
         end
-        def = get(method_info, method.sig, nothing)
     end
     return def === nothing ? nothing : copy(def[2])
 end
