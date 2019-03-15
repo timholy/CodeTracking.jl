@@ -56,4 +56,16 @@ include("script.jl")
 
     m = first(methods(Test.eval))
     @test occursin(Sys.STDLIB, whereis(m)[1])
+
+    # https://github.com/JuliaDebug/JuliaInterpreter.jl/issues/150
+    function f150()
+        x = 1 + 1
+        @info "hello"
+    end
+    m = first(methods(f150))
+    src = Base.uncompressed_ast(m)
+    idx = findfirst(lin -> String(lin.file) != @__FILE__, src.linetable)
+    lin = src.linetable[idx]
+    file, line = whereis(lin, m)
+    @test endswith(file, String(lin.file))
 end

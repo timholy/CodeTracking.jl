@@ -42,17 +42,11 @@ function whereis(method::Method)
         end
     end
     if lin === nothing
-        file, line = maybe_fixup_stdlib_path(String(method.file)), method.line
+        file, line = String(method.file), method.line
     else
         file, line = fileline(lin[1])
     end
-    if !isabspath(file)
-        # This may be a Base or Core method
-        newfile = Base.find_source_file(file)
-        if isa(newfile, AbstractString)
-            file = normpath(newfile)
-        end
-    end
+    file = maybe_fix_path(file)
     return file, line
 end
 
@@ -77,7 +71,21 @@ was compiled. The current location is returned.
 """
 function whereis(lineinfo, method::Method)
     file, line1 = whereis(method)
-    return file, lineinfo.line-method.line+line1
+    # We could be in an expanded macro. Apply the correction only if the filename checks out.
+    # (We're not super-fastidious here because of symlinks and other path ambiguities)
+    samefile = basename(file) == basename(String(lineinfo.file))
+    if !samefile
+        return maybe_fix_path(String(lineinfo.file)), lineinfo.line
+    end
+    return file, lineinfo.line - method.line + line1
+end
+function whereis(lineinfo::Core.LineInfoNode, method::Method)
+    # With LineInfoNode we have certainty about whether we're in a macro expansion
+    if lineinfo.method == Symbol("macro expansion")
+        return maybe_fix_path(String(lineinfo.file)), lineinfo.line
+    end
+    file, line1 = whereis(method)
+    return file, lineinfo.line - method.line + line1
 end
 
 """
