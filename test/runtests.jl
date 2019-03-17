@@ -1,7 +1,7 @@
 # Note: some of CodeTracking's functionality can only be tested by Revise
 
 using CodeTracking
-using Test
+using Test, InteractiveUtils
 # Note: ColorTypes needs to be installed, but note the intentional absence of `using ColorTypes`
 
 include("script.jl")
@@ -44,6 +44,12 @@ include("script.jl")
 
     @test pkgfiles("ColorTypes") === nothing
     @test_throws ErrorException pkgfiles("NotAPkg")
+
+    # Test a method marked as missing
+    m = @which sum(1:5)
+    CodeTracking.method_info[m.sig] = missing
+    @test whereis(m) == (CodeTracking.maybe_fix_path(String(m.file)), m.line)
+    @test definition(m) === nothing
 
     # Test that definitions at the REPL work with `whereis`
     ex = Base.parse_input_line("replfunc(x) = 1"; filename="REPL[1]")
