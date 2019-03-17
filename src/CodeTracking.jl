@@ -14,7 +14,7 @@ include("utils.jl")
 
 # These values get populated by Revise
 
-const method_info = IdDict{Type,Tuple{LineNumberNode,Expr}}()
+const method_info = IdDict{Type,Union{Missing,Tuple{LineNumberNode,Expr}}}()
 
 const _pkgfiles = Dict{PkgId,PkgFiles}()
 
@@ -41,7 +41,7 @@ function whereis(method::Method)
             end
         end
     end
-    if lin === nothing
+    if lin === nothing || ismissing(lin)
         file, line = String(method.file), method.line
     else
         file, line = fileline(lin[1])
@@ -189,7 +189,7 @@ function definition(method::Method, ::Type{Expr})
             end
         end
     end
-    return def === nothing ? nothing : copy(def[2])
+    return def === nothing || ismissing(def) ? nothing : copy(def[2])
 end
 
 definition(method::Method) = definition(method, Expr)
