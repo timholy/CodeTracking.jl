@@ -126,6 +126,10 @@ function signatures_at(filename::AbstractString, line::Integer)
         id = PkgId(Base.project_deps_get(project, libname), libname)
         return signatures_at(id, joinpath(spath[2:end]...), line)
     end
+    if startswith(filename, "REPL[")
+        id = PkgId("@REPL")
+        return signatures_at(id, filename, line)
+    end
     for (id, pkgfls) in _pkgfiles
         if startswith(filename, basedir(pkgfls)) || id.name == "Main"
             bdir = basedir(pkgfls)
