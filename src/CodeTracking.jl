@@ -35,6 +35,8 @@ const method_lookup_callback = Ref{Any}(nothing)
 #        a list of method-signatures defined by that expression.
 const expressions_callback = Ref{Any}(nothing)
 
+const juliabase = joinpath("julia", "base")
+const juliastdlib = joinpath("julia", "stdlib", "v$(VERSION.major).$(VERSION.minor)")
 
 ### Public API
 
@@ -112,6 +114,18 @@ Return the signatures of all methods whose definition spans the specified locati
 Returns `nothing` if there are no methods at that location.
 """
 function signatures_at(filename::AbstractString, line::Integer)
+    if occursin(juliabase, filename)
+        rpath = postpath(filename, juliabase)
+        id = PkgId(Base)
+        return signatures_at(id, rpath, line)
+    elseif occursin(juliastdlib, filename)
+        rpath = postpath(filename, juliastdlib)
+        spath = splitpath(rpath)
+        libname = spath[1]
+        project = Base.active_project()
+        id = PkgId(Base.project_deps_get(project, libname), libname)
+        return signatures_at(id, joinpath(spath[2:end]...), line)
+    end
     for (id, pkgfls) in _pkgfiles
         if startswith(filename, basedir(pkgfls)) || id.name == "Main"
             bdir = basedir(pkgfls)

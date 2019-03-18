@@ -81,3 +81,11 @@ function maybe_fixup_stdlib_path(path)
     end
     return path
 end
+
+function postpath(filename, pre)
+    idx = findfirst(pre, filename)
+    idx === nothing && error(pre, " not found in ", filename)
+    post = filename[first(idx) + length(pre) : end]
+    post[1:1] == Base.Filesystem.path_separator && return post[2:end]
+    return post
+end
