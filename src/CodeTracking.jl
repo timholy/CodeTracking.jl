@@ -18,8 +18,25 @@ const method_info = IdDict{Type,Union{Missing,Tuple{LineNumberNode,Expr}}}()
 
 const _pkgfiles = Dict{PkgId,PkgFiles}()
 
+# Callback for method-lookup. `lookupfunc = method_lookup_callback[]` must have the form
+#     ret = lookupfunc(method)
+# where `ret` is either `nothing` or `(lnn, def)`. `lnn` is a LineNumberNode (or any valid
+# input to `CodeTracking.fileline`) and `def` is the expression defining the method.
 const method_lookup_callback = Ref{Any}(nothing)
-const expressions_callback   = Ref{Any}(nothing)
+
+# Callback for `signatures_at` (lookup by file/lineno). `lookupfunc = expressions_callback[]`
+# must have the form
+#    mod, exsigs = lookupfunc(id, relpath)
+# where
+#    id is the PkgId of the corresponding package
+#    relpath is the path of the file from the basedir of `id`
+#    mod is the "active" module at that point in the source
+#    exsigs is a ex=>sigs dictionary, where `ex` is the source expression and `sigs`
+#        a list of method-signatures defined by that expression.
+const expressions_callback = Ref{Any}(nothing)
+
+const juliabase = joinpath("julia", "base")
+const juliastdlib = joinpath("julia", "stdlib", "v$(VERSION.major).$(VERSION.minor)")
 
 ### Public API
 
@@ -97,6 +114,22 @@ Return the signatures of all methods whose definition spans the specified locati
 Returns `nothing` if there are no methods at that location.
 """
 function signatures_at(filename::AbstractString, line::Integer)
+    if occursin(juliabase, filename)
+        rpath = postpath(filename, juliabase)
+        id = PkgId(Base)
+        return signatures_at(id, rpath, line)
+    elseif occursin(juliastdlib, filename)
+        rpath = postpath(filename, juliastdlib)
+        spath = splitpath(rpath)
+        libname = spath[1]
+        project = Base.active_project()
+        id = PkgId(Base.project_deps_get(project, libname), libname)
+        return signatures_at(id, joinpath(spath[2:end]...), line)
+    end
+    if startswith(filename, "REPL[")
+        id = PkgId("@REPL")
+        return signatures_at(id, filename, line)
+    end
     for (id, pkgfls) in _pkgfiles
         if startswith(filename, basedir(pkgfls)) || id.name == "Main"
             bdir = basedir(pkgfls)

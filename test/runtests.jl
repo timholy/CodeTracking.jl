@@ -75,3 +75,17 @@ include("script.jl")
     file, line = whereis(lin, m)
     @test endswith(file, String(lin.file))
 end
+
+@testset "With Revise" begin
+    if isdefined(Main, :Revise)
+        m = @which gcd(10, 20)
+        sigs = signatures_at(Base.find_source_file(String(m.file)), m.line)
+        @test !isempty(sigs)
+
+        m = first(methods(edit))
+        sigs = signatures_at(String(m.file), m.line)
+        @test !isempty(sigs)
+        sigs = signatures_at(Base.find_source_file(String(m.file)), m.line)
+        @test !isempty(sigs)
+    end
+end
