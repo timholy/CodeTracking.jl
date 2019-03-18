@@ -114,6 +114,7 @@ Return the signatures of all methods whose definition spans the specified locati
 Returns `nothing` if there are no methods at that location.
 """
 function signatures_at(filename::AbstractString, line::Integer)
+    filename = abspath(filename)
     if occursin(juliabase, filename)
         rpath = postpath(filename, juliabase)
         id = PkgId(Base)
@@ -139,7 +140,7 @@ function signatures_at(filename::AbstractString, line::Integer)
             end
         end
     end
-    error("$filename not found, perhaps the package is not loaded")
+    error("$filename not found in internal data, perhaps the package is not loaded (or not loaded with `includet`)")
 end
 
 """

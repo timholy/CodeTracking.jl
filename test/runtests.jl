@@ -4,7 +4,7 @@ using CodeTracking
 using Test, InteractiveUtils
 # Note: ColorTypes needs to be installed, but note the intentional absence of `using ColorTypes`
 
-include("script.jl")
+isdefined(Main, :Revise) ? includet("script.jl") : include("script.jl")
 
 @testset "CodeTracking.jl" begin
     m = first(methods(f1))
@@ -87,5 +87,8 @@ end
         @test !isempty(sigs)
         sigs = signatures_at(Base.find_source_file(String(m.file)), m.line)
         @test !isempty(sigs)
+
+        # issue #23
+        @test !isempty(signatures_at("script.jl", 9))
     end
 end
