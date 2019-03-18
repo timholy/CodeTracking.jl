@@ -140,7 +140,7 @@ function signatures_at(filename::AbstractString, line::Integer)
             end
         end
     end
-    error("$filename not found, perhaps the package is not loaded")
+    error("$filename not found in internal data, perhaps the package is not loaded (or not loaded with `includet`)")
 end
 
 """
