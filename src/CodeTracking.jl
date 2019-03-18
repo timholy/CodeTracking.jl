@@ -18,8 +18,23 @@ const method_info = IdDict{Type,Union{Missing,Tuple{LineNumberNode,Expr}}}()
 
 const _pkgfiles = Dict{PkgId,PkgFiles}()
 
+# Callback for method-lookup. `lookupfunc = method_lookup_callback[]` must have the form
+#     ret = lookupfunc(method)
+# where `ret` is either `nothing` or `(lnn, def)`. `lnn` is a LineNumberNode (or any valid
+# input to `CodeTracking.fileline`) and `def` is the expression defining the method.
 const method_lookup_callback = Ref{Any}(nothing)
-const expressions_callback   = Ref{Any}(nothing)
+
+# Callback for `signatures_at` (lookup by file/lineno). `lookupfunc = expressions_callback[]`
+# must have the form
+#    mod, exsigs = lookupfunc(id, relpath)
+# where
+#    id is the PkgId of the corresponding package
+#    relpath is the path of the file from the basedir of `id`
+#    mod is the "active" module at that point in the source
+#    exsigs is a ex=>sigs dictionary, where `ex` is the source expression and `sigs`
+#        a list of method-signatures defined by that expression.
+const expressions_callback = Ref{Any}(nothing)
+
 
 ### Public API
 
