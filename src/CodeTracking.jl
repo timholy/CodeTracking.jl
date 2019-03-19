@@ -175,15 +175,16 @@ function signatures_at(id::PkgId, relpath::AbstractString, line::Integer)
 end
 
 """
-    src, line1 = definition(method::Method, String)
+    src, line1 = definition(String, method::Method)
 
 Return a string with the code that defines `method`. Also return the first line of the
-definition, including the signature.
+definition, including the signature (which may not be the same line number returned
+by `whereis`).
 
 Note this may not be terribly useful for methods that are defined inside `@eval` statements;
-see [`definition(method::Method, Expr)`](@ref) instead.
+see [`definition(Expr, method::Method)`](@ref) instead.
 """
-function definition(method::Method, ::Type{String})
+function definition(::Type{String}, method::Method)
     file, line = whereis(method)
     src = read(file, String)
     eol = isequal('\n')
@@ -209,12 +210,12 @@ function definition(method::Method, ::Type{String})
 end
 
 """
-    ex = definition(method::Method, Expr)
+    ex = definition(Expr, method::Method)
     ex = definition(method::Method)
 
 Return an expression that defines `method`.
 """
-function definition(method::Method, ::Type{Expr})
+function definition(::Type{Expr}, method::Method)
     def = get(method_info, method.sig, nothing)
     if def === nothing
         f = method_lookup_callback[]
@@ -229,7 +230,7 @@ function definition(method::Method, ::Type{Expr})
     return def === nothing || ismissing(def) ? nothing : copy(def[2])
 end
 
-definition(method::Method) = definition(method, Expr)
+definition(method::Method) = definition(Expr, method)
 
 """
     info = pkgfiles(name::AbstractString)

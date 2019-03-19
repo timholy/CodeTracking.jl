@@ -20,7 +20,7 @@ isdefined(Main, :Revise) ? includet("script.jl") : include("script.jl")
     @test whereis(trace[2]) == (scriptpath, 11)
     @test whereis(trace[3]) === nothing
 
-    src, line = definition(m, String)
+    src, line = definition(String, m)
     @test src == """
     function f1(x, y)
         # A comment
@@ -30,7 +30,7 @@ isdefined(Main, :Revise) ? includet("script.jl") : include("script.jl")
     @test line == 2
 
     m = first(methods(f2))
-    src, line = definition(m, String)
+    src, line = definition(String, m)
     @test src == """
     f2(x, y) = x + y
     """
