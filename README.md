@@ -49,8 +49,8 @@ julia> definition(m)
           c.r
       end)
 
-julia> definition(m, String)
-"red(c::AbstractRGB   ) = c.r\n"
+julia> str, line1 = definition(String, m)
+("red(c::AbstractRGB   ) = c.r\n", 14)
 ```
 
 or to find the method-signatures at a particular location:
