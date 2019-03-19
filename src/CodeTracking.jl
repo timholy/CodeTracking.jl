@@ -175,9 +175,10 @@ function signatures_at(id::PkgId, relpath::AbstractString, line::Integer)
 end
 
 """
-    src = definition(method::Method, String)
+    src, line1 = definition(method::Method, String)
 
-Return a string with the code that defines `method`.
+Return a string with the code that defines `method`. Also return the first line of the
+definition, including the signature.
 
 Note this may not be terribly useful for methods that are defined inside `@eval` statements;
 see [`definition(method::Method, Expr)`](@ref) instead.
@@ -194,7 +195,7 @@ function definition(method::Method, ::Type{String})
     end
     ex, iend = Meta.parse(src, istart)
     if isfuncexpr(ex)
-        return src[istart+1:iend-1]
+        return src[istart+1:iend-1], line
     end
     # The function declaration was presumably on a previous line
     lineindex = lastindex(linestarts)
@@ -204,7 +205,7 @@ function definition(method::Method, ::Type{String})
         lineindex -= 1
         line -= 1
     end
-    return src[istart:iend-1]
+    return src[istart:iend-1], line
 end
 
 """
