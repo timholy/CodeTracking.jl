@@ -11,27 +11,30 @@ isdefined(Main, :Revise) ? includet("script.jl") : include("script.jl")
     file, line = whereis(m)
     scriptpath = normpath(joinpath(@__DIR__, "script.jl"))
     @test file == scriptpath
-    @test line == 3
+    @test line == 4
     trace = try
         call_throws()
     catch
         stacktrace(catch_backtrace())
     end
-    @test whereis(trace[2]) == (scriptpath, 10)
+    @test whereis(trace[2]) == (scriptpath, 11)
     @test whereis(trace[3]) === nothing
 
-    src = definition(m, String)
+    src, line = definition(m, String)
     @test src == """
     function f1(x, y)
+        # A comment
         return x + y
     end
     """
+    @test line == 2
 
     m = first(methods(f2))
-    src = definition(m, String)
+    src, line = definition(m, String)
     @test src == """
     f2(x, y) = x + y
     """
+    @test line == 7
 
     info = CodeTracking.PkgFiles(Base.PkgId(CodeTracking))
     @test Base.PkgId(info) === info.id
