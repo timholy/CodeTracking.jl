@@ -1,5 +1,6 @@
 # NOTE: tests are sensitive to the line number at which statements appear
 function f1(x, y)
+    # A comment
     return x + y
 end
 

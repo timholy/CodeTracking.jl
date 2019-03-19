@@ -198,9 +198,11 @@ function definition(method::Method, ::Type{String})
     end
     # The function declaration was presumably on a previous line
     lineindex = lastindex(linestarts)
-    while !isfuncexpr(ex)
+    while !isfuncexpr(ex) && lineindex > 0
         istart = linestarts[lineindex]
         ex, iend = Meta.parse(src, istart)
+        lineindex -= 1
+        line -= 1
     end
     return src[istart:iend-1]
 end
