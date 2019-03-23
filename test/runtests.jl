@@ -31,9 +31,7 @@ isdefined(Main, :Revise) ? includet("script.jl") : include("script.jl")
 
     m = first(methods(f2))
     src, line = definition(String, m)
-    @test src == """
-    f2(x, y) = x + y
-    """
+    @test src == "f2(x, y) = x + y"
     @test line == 7
 
     info = CodeTracking.PkgFiles(Base.PkgId(CodeTracking))
@@ -62,6 +60,17 @@ isdefined(Main, :Revise) ? includet("script.jl") : include("script.jl")
     # Test with broken lookup
     CodeTracking.method_lookup_callback[] = m -> error("oops")
     @test whereis(m) == ("REPL[1]", 1)
+    # Test with definition(String, m)
+    if isdefined(Base, :active_repl)
+        hp = Base.active_repl.interface.modes[1].hist
+        fstr = "__fREPL__(x::Int16) = 0"
+        histidx = length(hp.history) + 1 - hp.start_idx
+        ex = Base.parse_input_line(fstr; filename="REPL[$histidx]")
+        f = Core.eval(Main, ex)
+        push!(hp.history, fstr)
+        @test definition(String, first(methods(f))) == (fstr, 1)
+        pop!(hp.history)
+    end
 
     m = first(methods(Test.eval))
     @test occursin(Sys.STDLIB, whereis(m)[1])
