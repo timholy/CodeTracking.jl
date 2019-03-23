@@ -114,7 +114,9 @@ Return the signatures of all methods whose definition spans the specified locati
 Returns `nothing` if there are no methods at that location.
 """
 function signatures_at(filename::AbstractString, line::Integer)
-    filename = abspath(filename)
+    if !startswith(filename, "REPL[")
+        filename =  abspath(filename)
+    end
     if occursin(juliabase, filename)
         rpath = postpath(filename, juliabase)
         id = PkgId(Base)
