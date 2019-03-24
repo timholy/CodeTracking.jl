@@ -114,7 +114,9 @@ Return the signatures of all methods whose definition spans the specified locati
 Returns `nothing` if there are no methods at that location.
 """
 function signatures_at(filename::AbstractString, line::Integer)
-    filename = abspath(filename)
+    if !startswith(filename, "REPL[")
+        filename = abspath(filename)
+    end
     if occursin(juliabase, filename)
         rpath = postpath(filename, juliabase)
         id = PkgId(Base)
@@ -186,17 +188,18 @@ see [`definition(Expr, method::Method)`](@ref) instead.
 """
 function definition(::Type{String}, method::Method)
     file, line = whereis(method)
-    src = read(file, String)
+    src = src_from_file_or_REPL(file)
     eol = isequal('\n')
     linestarts = Int[]
-    istart = 0
+    istart = 1
     for i = 1:line-1
-        push!(linestarts, istart+1)
-        istart = findnext(eol, src, istart+1)
+        push!(linestarts, istart)
+        istart = findnext(eol, src, istart) + 1
     end
     ex, iend = Meta.parse(src, istart)
     if isfuncexpr(ex)
-        return src[istart+1:iend-1], line
+        iend = min(iend, lastindex(src))
+        return strip(src[istart:iend], '\n'), line
     end
     # The function declaration was presumably on a previous line
     lineindex = lastindex(linestarts)

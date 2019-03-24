@@ -39,6 +39,35 @@ fileline(lnn::LineNumberNode) = String(lnn.file), lnn.line
 # This is piracy, but it's not ambiguous in terms of what it should do
 Base.convert(::Type{LineNumberNode}, lin::LineInfoNode) = LineNumberNode(lin.line, lin.file)
 
+# This regex matches the pseudo-file name of a REPL history entry.
+const rREPL = r"^REPL\[(\d+)\]$"
+
+"""
+    src = src_from_file_or_REPL(origin::AbstractString, repl = Base.active_repl)
+
+Read the source for a function from `origin`, which is either the name of a file
+or "REPL[\$i]", where `i` is an integer specifying the particular history entry.
+Methods defined at the REPL use strings of this form in their `file` field.
+
+If you happen to have a file where the name matches `REPL[\$i]`, first pass it through
+`abspath`.
+"""
+function src_from_file_or_REPL(origin::AbstractString, args...)
+    # This Varargs design prevents an unnecessary error when Base.active_repl is undefined
+    # and `origin` does not match "REPL[$i]"
+    m = match(rREPL, origin)
+    if m !== nothing
+        return _src_from_file_or_REPL(origin, args...)
+    end
+    return read(origin, String)
+end
+
+function _src_from_file_or_REPL(origin::AbstractString, repl = Base.active_repl)
+    hist_idx = parse(Int, m.captures[1])
+    hp = repl.interface.modes[1].hist
+    return hp.history[hp.start_idx+hist_idx]
+end
+
 function basepath(id::PkgId)
     id.name ∈ ("Main", "Base", "Core") && return ""
     loc = Base.locate_package(id)
