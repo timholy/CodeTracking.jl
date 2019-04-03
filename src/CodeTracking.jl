@@ -204,16 +204,12 @@ function definition(::Type{String}, method::Method)
     end
     # The function declaration was presumably on a previous line
     lineindex = lastindex(linestarts)
-    local istart_noerr
     while !isfuncexpr(ex) && lineindex > 0
         istart = linestarts[lineindex]
         try
             ex, iend = Meta.parse(src, istart)
         catch
-            istart = istart_noerr
-            break
         end
-        istart_noerr = istart
         lineindex -= 1
         line -= 1
     end
