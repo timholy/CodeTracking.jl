@@ -57,13 +57,13 @@ function src_from_file_or_REPL(origin::AbstractString, args...)
     # and `origin` does not match "REPL[$i]"
     m = match(rREPL, origin)
     if m !== nothing
-        return _src_from_file_or_REPL(origin, args...)
+        return src_from_REPL(m.captures[1], args...)
     end
     return read(origin, String)
 end
 
-function _src_from_file_or_REPL(origin::AbstractString, repl = Base.active_repl)
-    hist_idx = parse(Int, m.captures[1])
+function src_from_REPL(origin::AbstractString, repl = Base.active_repl)
+    hist_idx = parse(Int, origin)
     hp = repl.interface.modes[1].hist
     return hp.history[hp.start_idx+hist_idx]
 end
