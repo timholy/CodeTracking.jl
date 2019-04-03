@@ -2,6 +2,7 @@ module CodeTracking
 
 using Base: PkgId
 using Core: LineInfoNode
+using Base.Meta: isexpr
 using UUIDs
 using InteractiveUtils
 
@@ -203,9 +204,16 @@ function definition(::Type{String}, method::Method)
     end
     # The function declaration was presumably on a previous line
     lineindex = lastindex(linestarts)
+    local istart_noerr
     while !isfuncexpr(ex) && lineindex > 0
         istart = linestarts[lineindex]
-        ex, iend = Meta.parse(src, istart)
+        try
+            ex, iend = Meta.parse(src, istart)
+        catch
+            istart = istart_noerr
+            break
+        end
+        istart_noerr = istart
         lineindex -= 1
         line -= 1
     end

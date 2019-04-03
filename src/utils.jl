@@ -1,4 +1,9 @@
 function isfuncexpr(ex)
+    # Strip any macros that wrap the method definition
+    while isexpr(ex, :macrocall)
+        ex = ex.args[3]
+    end
+    isa(ex, Expr) || return false
     ex.head == :function && return true
     if ex.head == :(=)
         a = ex.args[1]
