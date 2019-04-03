@@ -17,7 +17,7 @@ isdefined(Main, :Revise) ? includet("script.jl") : include("script.jl")
     catch
         stacktrace(catch_backtrace())
     end
-    @test whereis(trace[2]) == (scriptpath, 11)
+    @test whereis(trace[2]) == (scriptpath, 9)
     @test whereis(trace[3]) === nothing
 
     src, line = definition(String, m)
@@ -32,6 +32,11 @@ isdefined(Main, :Revise) ? includet("script.jl") : include("script.jl")
     m = first(methods(f2))
     src, line = definition(String, m)
     @test src == "f2(x, y) = x + y"
+    @test line == 14
+
+    m = first(methods(throws))
+    src, line = definition(String, m)
+    @test startswith(src, "@noinline")
     @test line == 7
 
     info = CodeTracking.PkgFiles(Base.PkgId(CodeTracking))

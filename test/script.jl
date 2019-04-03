@@ -4,11 +4,11 @@ function f1(x, y)
     return x + y
 end
 
-f2(x, y) = x + y
-
 @noinline function throws()
     x = nothing
     error("oops")
 end
 @inline inlined() = throws()
 call_throws() = inlined()
+
+f2(x, y) = x + y
