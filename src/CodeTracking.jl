@@ -199,8 +199,11 @@ function definition(::Type{String}, method::Method)
     end
     ex, iend = Meta.parse(src, istart)
     if isfuncexpr(ex)
-        iend = min(iend, lastindex(src))
-        return strip(src[istart:iend], '\n'), line
+        iterm = lastindex(src)
+        if iend < iterm
+            iterm = iend-1
+        end
+        return strip(src[istart:iterm], '\n'), line
     end
     # The function declaration was presumably on a previous line
     lineindex = lastindex(linestarts)
