@@ -198,6 +198,7 @@ function definition(::Type{String}, method::Method)
         istart = findnext(eol, src, istart) + 1
     end
     ex, iend = Meta.parse(src, istart)
+    iend = prevind(src, iend)
     if isfuncexpr(ex)
         iend = min(iend, lastindex(src))
         return strip(src[istart:iend], '\n'), line

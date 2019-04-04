@@ -114,3 +114,17 @@ end
         @test !isempty(signatures_at("script.jl", 9))
     end
 end
+
+(a_34)(x::T, y::T) where {T<:Integer} = no_op_err("&", T)
+(b_34)(x::T, y::T) where {T<:Integer} = no_op_err("|", T)
+c_34(x::T, y::T) where {T<:Integer} = no_op_err("xor", T)
+
+(d_34)(x::T, y::T) where {T<:Number} = x === y
+(e_34)(x::T, y::T) where {T<:Real} = no_op_err("<" , T)
+(f_34)(x::T, y::T) where {T<:Real} = no_op_err("<=", T)
+l = @__LINE__
+@testset "#34 last character" begin
+    def, line = definition(String, @which d_34(1, 2))
+    @test line == l - 3
+    @test def == "(d_34)(x::T, y::T) where {T<:Number} = x === y"
+end
