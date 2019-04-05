@@ -48,6 +48,8 @@ Return the file and line of the definition of `method`. `line`
 is the first line of the method's body.
 """
 function whereis(method::Method)
+    file, line = String(method.file), method.line
+    startswith(file, "REPL[") && return file, line
     lin = get(method_info, method.sig, nothing)
     if lin === nothing
         f = method_lookup_callback[]
@@ -60,7 +62,6 @@ function whereis(method::Method)
         end
     end
     if lin === nothing || ismissing(lin)
-        file, line = String(method.file), method.line
     else
         file, line = fileline(lin[1])
     end
@@ -224,7 +225,8 @@ end
 Return an expression that defines `method`.
 """
 function definition(::Type{Expr}, method::Method)
-    def = get(method_info, method.sig, nothing)
+    file = String(method.file)
+    def = startswith(file, "REPL[") ? nothing : get(method_info, method.sig, nothing)
     if def === nothing
         f = method_lookup_callback[]
         if f !== nothing
