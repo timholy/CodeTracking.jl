@@ -251,9 +251,10 @@ Returns `nothing` if this package has not been loaded.
 pkgfiles(name::AbstractString, uuid::UUID) = pkgfiles(PkgId(uuid, name))
 function pkgfiles(name::AbstractString)
     project = Base.active_project()
-    uuid = Base.project_deps_get(project, name)
-    uuid == false && error("no package ", name, " recognized")
-    return pkgfiles(name, uuid)
+    # The value returned by Base.project_deps_get depends on the Julia version
+    id = Base.project_deps_get(project, name)
+    (id == false || id === nothing) && error("no package ", name, " recognized")
+    return isa(id, PkgId) ? pkgfiles(id) : pkgfiles(name, id)
 end
 pkgfiles(id::PkgId) = get(_pkgfiles, id, nothing)
 
