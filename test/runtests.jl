@@ -128,3 +128,16 @@ l = @__LINE__
     @test line == l - 3
     @test def == "(d_34)(x::T, y::T) where {T<:Number} = x === y"
 end
+
+function g()
+    Base.@_inline_meta
+    print("hello")
+end
+@testset "inline macros" begin
+    def, line = CodeTracking.definition(String, @which g())
+    @test def == """
+    function g()
+        Base.@_inline_meta
+        print("hello")
+    end"""
+end

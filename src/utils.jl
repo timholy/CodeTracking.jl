@@ -1,6 +1,6 @@
 function isfuncexpr(ex)
     # Strip any macros that wrap the method definition
-    while isexpr(ex, :macrocall)
+    while isexpr(ex, :macrocall) && length(ex.args) == 3
         ex = ex.args[3]
     end
     isa(ex, Expr) || return false
