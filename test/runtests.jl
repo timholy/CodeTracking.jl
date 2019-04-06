@@ -21,12 +21,12 @@ isdefined(Main, :Revise) ? includet("script.jl") : include("script.jl")
     @test whereis(trace[3]) === nothing
 
     src, line = definition(String, m)
-    @test src == """
+    @test src == chomp("""
     function f1(x, y)
         # A comment
         return x + y
     end
-    """
+    """)
     @test line == 2
 
     m = first(methods(f2))

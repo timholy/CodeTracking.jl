@@ -215,7 +215,7 @@ function definition(::Type{String}, method::Method)
         lineindex -= 1
         line -= 1
     end
-    return src[istart:iend-1], line
+    return chomp(src[istart:iend-1]), line
 end
 
 """
