@@ -1,27 +1,98 @@
 # CodeTracking
 
-CodeTracking is a minimal package designed to work with
-[Revise.jl](https://github.com/timholy/Revise.jl) (for versions after v1.1.0).
-Its main purpose is to support packages that need to interact with code that might move
-around as it gets edited.
+CodeTracking can be thought of as an extension of Julia's
+[InteractiveUtils library](https://docs.julialang.org/en/latest/stdlib/InteractiveUtils/).
+It provides an interface for obtaining:
 
+- the strings and expressions of method definitions
+- the method signatures at a specific file & line number
+- location information for "dynamic" code that might have moved since it was first loaded
+- a list of files that comprise a particular package.
+
+CodeTracking is a minimal package designed to work with
+[Revise.jl](https://github.com/timholy/Revise.jl) (for versions v1.1.0 and higher).
 CodeTracking is a very lightweight dependency.
 
-Example:
+## Examples
+
+### `@code_string` and `@code_expr`
 
 ```julia
-julia> using CodeTracking
+julia> using CodeTracking, Revise
+
+julia> print(@code_string sum(1:5))
+function sum(r::AbstractRange{<:Real})
+    l = length(r)
+    # note that a little care is required to avoid overflow in l*(l-1)/2
+    return l * first(r) + (iseven(l) ? (step(r) * (l-1)) * (l>>1)
+                                     : (step(r) * l) * ((l-1)>>1))
+end
+
+julia> @code_expr sum(1:5)
+[ Info: tracking Base
+quote
+    #= toplevel:977 =#
+    function sum(r::AbstractRange{<:Real})
+        #= /home/tim/src/julia-1/base/range.jl:978 =#
+        l = length(r)
+        #= /home/tim/src/julia-1/base/range.jl:980 =#
+        return l * first(r) + if iseven(l)
+                    (step(r) * (l - 1)) * l >> 1
+                else
+                    (step(r) * l) * (l - 1) >> 1
+                end
+    end
+end
+```
+
+`@code_string` succeeds in that case even if you are not using Revise, but `@code_expr` always requires Revise.
+(If you must live without Revise, you can use `Meta.parse(@code_string(...))` as a fallback.)
+
+"Difficult" methods are handled more accurately with `@code_expr` and Revise.
+Here's one that's defined via an `@eval` statement inside a loop:
+
+```julia
+julia> @code_expr Float16(1) + Float16(2)
+:(a::Float16 + b::Float16 = begin
+          #= /home/tim/src/julia-1/base/float.jl:398 =#
+          Float16(Float32(a) + Float32(b))
+      end)
+```
+
+whereas `@code_string` cannot return a useful result:
+
+```
+julia> @code_string Float16(1) + Float16(2)
+"# This file is a part of Julia. License is MIT: https://julialang.org/license\n\nconst IEEEFloat = Union{Float16, Float32, Float64}"
+```
+Consequently it's recommended to use `@code_expr` in preference to `@code_string` wherever possible.
+
+`@code_expr` and `@code_string` have companion functional variants, `code_expr` and `code_string`, which accept the function and a `Tuple{T1, T2, ...}` of types.
+
+`@code_expr` and `@code_string` are based on the lower-level function `definition`;
+you can read about it with `?definition`.
+
+### Location information
+
+```julia
+julia> using CodeTracking, Revise
 
 julia> m = @which sum([1,2,3])
 sum(a::AbstractArray) in Base at reducedim.jl:648
 
+julia> Revise.track(Base)  # also edit reducedim.jl
+
 julia> file, line = whereis(m)
 ("/home/tim/src/julia-1/usr/share/julia/base/reducedim.jl", 642)
+
+julia> m.line
+648
 ```
 
 In this (ficticious) example, `sum` moved because I deleted a few lines higher in the file;
 these didn't affect the functionality of `sum` (so we didn't need to redefine and recompile it),
 but it does change the starting line number of the file at which this method appears.
+`whereis` reports the current line number, and `m.line` the old line number. (For technical reasons, it is important that `m.line` remain at the value it had when the code was lowered.)
 
 Other methods of `whereis` allow you to obtain the current position corresponding to a single
 statement inside a method; see `?whereis` for details.
@@ -29,7 +100,7 @@ statement inside a method; see `?whereis` for details.
 CodeTracking can also be used to find out what files define a particular package:
 
 ```julia
-julia> using CodeTracking, ColorTypes
+julia> using CodeTracking, Revise, ColorTypes
 
 julia> pkgfiles(ColorTypes)
 PkgFiles(ColorTypes [3da002f7-5984-5a60-b8a6-cbb66c0b333f]):
@@ -37,23 +108,8 @@ PkgFiles(ColorTypes [3da002f7-5984-5a60-b8a6-cbb66c0b333f]):
   files: ["src/ColorTypes.jl", "src/types.jl", "src/traits.jl", "src/conversions.jl", "src/show.jl", "src/operations.jl"]
 ```
 
-or to extract the expression that defines a method:
 
-```julia
-julia> m = @which red(RGB(1,1,1))
-red(c::AbstractRGB) in ColorTypes at /home/tim/.julia/packages/ColorTypes/BsAWO/src/traits.jl:14
-
-julia> definition(m)
-:(red(c::AbstractRGB) = begin
-          #= /home/tim/.julia/packages/ColorTypes/BsAWO/src/traits.jl:14 =#
-          c.r
-      end)
-
-julia> str, line1 = definition(String, m)
-("red(c::AbstractRGB   ) = c.r\n", 14)
-```
-
-or to find the method-signatures at a particular location:
+You can also find the method-signatures at a particular location:
 
 ```julia
 julia> signatures_at(ColorTypes, "src/traits.jl", 14)
@@ -77,14 +133,10 @@ julia> CodeTracking.whereis(@which uuid1())
 
 ## A few details
 
-CodeTracking won't do anything *useful* unless the user is also running Revise,
-because Revise will be responsible for updating CodeTracking's internal variables.
+CodeTracking has limited functionality unless the user is also running Revise,
+because Revise populates CodeTracking's internal variables.
 (Using `whereis` as an example, CodeTracking will just return the
 file/line info in the method itself if Revise isn't running.)
 
-However, Revise is a fairly large (and fairly complex) package, and currently it's not
-easy to discover how to extract particular kinds of information from its internal storage.
-CodeTracking is designed to be the new "query" part of Revise.jl.
-The aim is to have a very simple API that developers can learn in a few minutes and then
-incorporate into their own packages; its lightweight nature means that they potentially gain
-a lot of functionality without being forced to take a big hit in startup time.
+CodeTracking is perhaps best thought of as the "query" part of Revise.jl,
+providing a lightweight and stable API for gaining access to information it maintains internally.

@@ -6,7 +6,7 @@ using Base.Meta: isexpr
 using UUIDs
 using InteractiveUtils
 
-export whereis, definition, pkgfiles, signatures_at
+export code_expr, @code_expr, code_string, @code_string, whereis, definition, pkgfiles, signatures_at
 
 # More recent Julia versions assign the line number to the line with the function declaration,
 # not the first non-comment line of the body.
@@ -194,6 +194,8 @@ instead returns `nothing.`
 
 Note this may not be terribly useful for methods that are defined inside `@eval` statements;
 see [`definition(Expr, method::Method)`](@ref) instead.
+
+See also [`code_string`](@ref).
 """
 function definition(::Type{String}, method::Method)
     file, line = whereis(method)
@@ -233,6 +235,8 @@ end
 
 Return an expression that defines `method`. If the definition can't be found,
 returns `nothing`.
+
+See also [`code_expr`](@ref).
 """
 function definition(::Type{Expr}, method::Method)
     file = String(method.file)
@@ -251,6 +255,29 @@ function definition(::Type{Expr}, method::Method)
 end
 
 definition(method::Method) = definition(Expr, method)
+
+"""
+    code_expr(f, types)
+
+Returns the expression for the method definition for `f` with the specified types.
+
+May return `nothing` if Revise isn't loaded. In such cases, calling
+`Meta.parse(code_string(f, types))` can sometimes be an alternative.
+"""
+code_expr(f, t) = definition(Expr, which(f, t))
+macro code_expr(ex0...)
+    InteractiveUtils.gen_call_with_extracted_types_and_kwargs(__module__, :code_expr, ex0)
+end
+
+"""
+    code_string(f, types)
+
+Returns the code-string for the method definition for `f` with the specified types.
+"""
+code_string(f, t) = definition(String, which(f, t))[1]
+macro code_string(ex0...)
+    InteractiveUtils.gen_call_with_extracted_types_and_kwargs(__module__, :code_string, ex0)
+end
 
 """
     info = pkgfiles(name::AbstractString)
