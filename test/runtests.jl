@@ -96,6 +96,14 @@ isdefined(Main, :Revise) ? includet("script.jl") : include("script.jl")
     lin = src.linetable[idx]
     file, line = whereis(lin, m)
     @test endswith(file, String(lin.file))
+
+
+    # kwargs that result in not finding the file
+    m = @which sum([1]; dims=1)
+    loc = whereis(m)
+    @test loc != ("none", 0)  # old incorrect behavour.
+    @test loc === nothing
+    @test definition(String, m) === nothing
 end
 
 @testset "With Revise" begin

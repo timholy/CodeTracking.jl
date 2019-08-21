@@ -46,9 +46,13 @@ const juliastdlib = joinpath("julia", "stdlib", "v$(VERSION.major).$(VERSION.min
 
 Return the file and line of the definition of `method`. `line`
 is the first line of the method's body.
+If for some reason the file can not be determined, then this returns `nothing`
 """
 function whereis(method::Method)
-    file, line = String(method.file), method.line
+    method.file == :none && return nothing
+
+    file = String(method.file)
+    line = method.line
     startswith(file, "REPL[") && return file, line
     lin = get(method_info, method.sig, nothing)
     if lin === nothing
@@ -184,12 +188,16 @@ end
 Return a string with the code that defines `method`. Also return the first line of the
 definition, including the signature (which may not be the same line number returned
 by `whereis`).
+If the method could not be found for some reason, returns `nothing`.
 
 Note this may not be terribly useful for methods that are defined inside `@eval` statements;
 see [`definition(Expr, method::Method)`](@ref) instead.
 """
 function definition(::Type{String}, method::Method)
-    file, line = whereis(method)
+    loc = whereis(method)
+    loc === nothing && return nothing
+
+    file, line = loc
     src = src_from_file_or_REPL(file)
     eol = isequal('\n')
     linestarts = Int[]
