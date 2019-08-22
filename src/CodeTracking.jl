@@ -46,7 +46,7 @@ const juliastdlib = joinpath("julia", "stdlib", "v$(VERSION.major).$(VERSION.min
 
 Return the file and line of the definition of `method`. `line`
 is the first line of the method's body.
-If for some reason the file can not be determined, then this returns `nothing`
+If for some reason the file can not be determined, then return `nothing`
 """
 function whereis(method::Method)
     method.file == :none && return nothing
