@@ -183,13 +183,15 @@ end
 
 Return a string with the code that defines `method`. Also return the first line of the
 definition, including the signature (which may not be the same line number returned
-by `whereis`).
+by `whereis`). If the method can't be located (line number 0), then `definition`
+instead returns `nothing.`
 
 Note this may not be terribly useful for methods that are defined inside `@eval` statements;
 see [`definition(Expr, method::Method)`](@ref) instead.
 """
 function definition(::Type{String}, method::Method)
     file, line = whereis(method)
+    line == 0 && return nothing
     src = src_from_file_or_REPL(file)
     eol = isequal('\n')
     linestarts = Int[]
@@ -222,7 +224,8 @@ end
     ex = definition(Expr, method::Method)
     ex = definition(method::Method)
 
-Return an expression that defines `method`.
+Return an expression that defines `method`. If the definition can't be found,
+returns `nothing`.
 """
 function definition(::Type{Expr}, method::Method)
     file = String(method.file)

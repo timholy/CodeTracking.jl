@@ -68,6 +68,7 @@ isdefined(Main, :Revise) ? includet("script.jl") : include("script.jl")
     m = first(methods(replfunc))
     @test whereis(m) == ("REPL[1]", 1)
     # Test with broken lookup
+    oldlookup = CodeTracking.method_lookup_callback[]
     CodeTracking.method_lookup_callback[] = m -> error("oops")
     @test whereis(m) == ("REPL[1]", 1)
     # Test with definition(String, m)
@@ -81,6 +82,7 @@ isdefined(Main, :Revise) ? includet("script.jl") : include("script.jl")
         @test definition(String, first(methods(f))) == (fstr, 1)
         pop!(hp.history)
     end
+    CodeTracking.method_lookup_callback[] = oldlookup
 
     m = first(methods(Test.eval))
     @test occursin(Sys.STDLIB, whereis(m)[1])
@@ -96,6 +98,20 @@ isdefined(Main, :Revise) ? includet("script.jl") : include("script.jl")
     lin = src.linetable[idx]
     file, line = whereis(lin, m)
     @test endswith(file, String(lin.file))
+
+    # Issues raised in #48
+    m = @which(sum([1]; dims=1))
+    if !isdefined(Main, :Revise)
+        def = definition(String, m)
+        @test def === nothing || isa(def[1], AbstractString)
+        def = definition(Expr, m)
+        @test def === nothing || isa(def, Expr)
+    else
+        def = definition(String, m)
+        @test isa(def[1], AbstractString)
+        def = definition(Expr, m)
+        @test isa(def, Expr)
+    end
 end
 
 @testset "With Revise" begin
