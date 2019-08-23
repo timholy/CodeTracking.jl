@@ -98,6 +98,20 @@ isdefined(Main, :Revise) ? includet("script.jl") : include("script.jl")
     lin = src.linetable[idx]
     file, line = whereis(lin, m)
     @test endswith(file, String(lin.file))
+
+    # Issues raised in #48
+    m = @which(sum([1]; dims=1))
+    if !isdefined(Main, :Revise)
+        def = definition(String, m)
+        @test def === nothing || isa(def[1], AbstractString)
+        def = definition(Expr, m)
+        @test def === nothing || isa(def, Expr)
+    else
+        def = definition(String, m)
+        @test isa(def[1], AbstractString)
+        def = definition(Expr, m)
+        @test isa(def, Expr)
+    end
 end
 
 @testset "With Revise" begin
