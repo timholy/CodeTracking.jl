@@ -199,6 +199,7 @@ function definition(::Type{String}, method::Method)
     file, line = whereis(method)
     line == 0 && return nothing
     src = src_from_file_or_REPL(file)
+    src = replace(src, "\r"=>"")
     eol = isequal('\n')
     linestarts = Int[]
     istart = 1
