@@ -96,6 +96,7 @@ function maybe_fix_path(file)
     return maybe_fixup_stdlib_path(file)
 end
 
+safe_isfile(x) = try isfile(x); catch; false end
 const BUILDBOT_STDLIB_PATH = dirname(abspath(joinpath(String((@which uuid1()).file), "..", "..", "..")))
 replace_buildbot_stdlibpath(str::String) = replace(str, BUILDBOT_STDLIB_PATH => Sys.STDLIB)
 """
@@ -109,9 +110,9 @@ are, for non source Julia builds, given as absolute paths on the worker that bui
 This function corrects such a path to instead refer to the local path on the users drive.
 """
 function maybe_fixup_stdlib_path(path)
-    if !isfile(path)
+    if !safe_isfile(path)
         maybe_stdlib_path = replace_buildbot_stdlibpath(path)
-        isfile(maybe_stdlib_path) && return maybe_stdlib_path
+        safe_isfile(maybe_stdlib_path) && return maybe_stdlib_path
     end
     return path
 end
