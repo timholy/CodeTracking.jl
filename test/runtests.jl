@@ -4,6 +4,8 @@ using CodeTracking
 using Test, InteractiveUtils
 # Note: ColorTypes needs to be installed, but note the intentional absence of `using ColorTypes`
 
+using CodeTracking: line_is_decl
+
 isdefined(Main, :Revise) ? includet("script.jl") : include("script.jl")
 
 @testset "CodeTracking.jl" begin
@@ -11,7 +13,7 @@ isdefined(Main, :Revise) ? includet("script.jl") : include("script.jl")
     file, line = whereis(m)
     scriptpath = normpath(joinpath(@__DIR__, "script.jl"))
     @test file == scriptpath
-    @test line == 4
+    @test line == (line_is_decl ? 2 : 4)
     trace = try
         call_throws()
     catch

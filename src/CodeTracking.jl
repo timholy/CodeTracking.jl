@@ -8,6 +8,10 @@ using InteractiveUtils
 
 export whereis, definition, pkgfiles, signatures_at
 
+# More recent Julia versions assign the line number to the line with the function declaration,
+# not the first non-comment line of the body.
+const line_is_decl = VERSION >= v"1.5.0-DEV.567"
+
 include("pkgfiles.jl")
 include("utils.jl")
 
@@ -44,8 +48,9 @@ const juliastdlib = joinpath("julia", "stdlib", "v$(VERSION.major).$(VERSION.min
 """
     filepath, line = whereis(method::Method)
 
-Return the file and line of the definition of `method`. `line`
-is the first line of the method's body.
+Return the file and line of the definition of `method`. The meaning of `line`
+depends on the Julia version: on Julia 1.5 and higher it is the line number of
+the method declaration, otherwise it is the first line of the method's body.
 """
 function whereis(method::Method)
     file, line = String(method.file), method.line
@@ -111,7 +116,8 @@ end
     sigs = signatures_at(filename, line)
 
 Return the signatures of all methods whose definition spans the specified location.
-`line` must correspond to a line in the method body (not the signature or final `end`).
+Prior to Julia 1.5, `line` must correspond to a line in the method body
+(not the signature or final `end`).
 
 Returns `nothing` if there are no methods at that location.
 """
@@ -193,6 +199,7 @@ function definition(::Type{String}, method::Method)
     file, line = whereis(method)
     line == 0 && return nothing
     src = src_from_file_or_REPL(file)
+    src = replace(src, "\r"=>"")
     eol = isequal('\n')
     linestarts = Int[]
     istart = 1
