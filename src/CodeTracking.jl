@@ -209,13 +209,13 @@ function definition(::Type{String}, method::Method)
     end
     ex, iend = Meta.parse(src, istart)
     iend = prevind(src, iend)
-    if isfuncexpr(ex)
+    if isfuncexpr(ex, method.name)
         iend = min(iend, lastindex(src))
         return strip(src[istart:iend], '\n'), line
     end
     # The function declaration was presumably on a previous line
     lineindex = lastindex(linestarts)
-    while !isfuncexpr(ex) && lineindex > 0
+    while !isfuncexpr(ex, method.name) && lineindex > 0
         istart = linestarts[lineindex]
         try
             ex, iend = Meta.parse(src, istart)

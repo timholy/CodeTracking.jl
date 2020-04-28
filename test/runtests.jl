@@ -46,6 +46,11 @@ isdefined(Main, :Revise) ? includet("script.jl") : include("script.jl")
     @test startswith(src, "@inline")
     @test line == 16
 
+    m = first(methods(f50))
+    src, line = definition(String, m)
+    @test occursin("100x", src)
+    @test line == 22
+
     info = CodeTracking.PkgFiles(Base.PkgId(CodeTracking))
     @test Base.PkgId(info) === info.id
     @test CodeTracking.basedir(info) == dirname(@__DIR__)

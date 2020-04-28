@@ -18,3 +18,8 @@ f2(x, y) = x + y
     z = x + 1
     return z
 end
+
+function f50()   # issue #50
+    todB(x) = 10*log10(x)
+    println("100x is $(todB(100)) dB.")
+end

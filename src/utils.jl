@@ -1,10 +1,14 @@
-function isfuncexpr(ex)
+function isfuncexpr(ex, name=nothing)
+    checkname(fdef::Expr, name)            = checkname(fdef.args[1], name)
+    checkname(fname::Symbol, name::Symbol) = fname == name
+    checkname(fname::Symbol, ::Nothing)    = true
+
     # Strip any macros that wrap the method definition
     while isexpr(ex, :macrocall) && length(ex.args) == 3
         ex = ex.args[3]
     end
     isa(ex, Expr) || return false
-    ex.head == :function && return true
+    ex.head == :function && return checkname(ex, name)
     if ex.head == :(=)
         a = ex.args[1]
         if isa(a, Expr)
@@ -12,7 +16,7 @@ function isfuncexpr(ex)
                 a = a.args[1]
                 isa(a, Expr) || return false
             end
-            a.head == :call && return true
+            a.head == :call && return checkname(a, name)
         end
     end
     return false
