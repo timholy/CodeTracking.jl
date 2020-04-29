@@ -1,13 +1,12 @@
 # Note: some of CodeTracking's functionality can only be tested by Revise
 
 using CodeTracking
-using Test, InteractiveUtils, Pkg
+using Test, InteractiveUtils
 # Note: ColorTypes needs to be installed, but note the intentional absence of `using ColorTypes`
 
 using CodeTracking: line_is_decl
 
 if !isempty(ARGS) && "revise" ∈ ARGS
-    Pkg.add(PackageSpec(url="https://github.com/timholy/Revise.jl"))
     using Revise
 end
 
