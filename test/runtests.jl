@@ -30,6 +30,8 @@ isdefined(Main, :Revise) ? includet("script.jl") : include("script.jl")
     end
     """)
     @test line == 2
+    @test code_string(f1, Tuple{Any,Any}) == src
+    @test @code_string(f1(1, 2)) == src
 
     m = first(methods(f2))
     src, line = definition(String, m)
@@ -45,6 +47,8 @@ isdefined(Main, :Revise) ? includet("script.jl") : include("script.jl")
     src, line = definition(String, m)
     @test startswith(src, "@inline")
     @test line == 16
+    @test @code_string(multilinesig(1, "hi")) == src
+    @test_throws ErrorException("no unique matching method found for the specified argument types") @code_string(multilinesig(1, 2))
 
     m = first(methods(f50))
     src, line = definition(String, m)
@@ -126,6 +130,10 @@ end
         m = @which gcd(10, 20)
         sigs = signatures_at(Base.find_source_file(String(m.file)), m.line)
         @test !isempty(sigs)
+        ex = @code_expr(gcd(10, 20))
+        @test ex isa Expr
+        @test occursin(String(m.file), String(ex.args[2].args[2].args[1].file))
+        @test ex == code_expr(gcd, Tuple{Int,Int})
 
         m = first(methods(edit))
         sigs = signatures_at(String(m.file), m.line)
