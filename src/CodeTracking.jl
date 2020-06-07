@@ -19,7 +19,12 @@ include("utils.jl")
 
 # These values get populated by Revise
 
-const method_info = IdDict{Type,Union{Missing,Tuple{LineNumberNode,Expr}}}()
+# `method_info[sig]` is either:
+#   - `missing`, to indicate that the method cannot be located
+#   - a list of `(lnn,ex)` pairs. In almost all cases there will be just one of these,
+#     but "mistakes" in moving methods from one file to another can result in more than
+#     definition. The last pair in the list is the currently-active definition.
+const method_info = IdDict{Type,Union{Missing,Vector{Tuple{LineNumberNode,Expr}}}}()
 
 const _pkgfiles = Dict{PkgId,PkgFiles}()
 
@@ -68,7 +73,7 @@ function whereis(method::Method)
     end
     if lin === nothing || ismissing(lin)
     else
-        file, line = fileline(lin[1])
+        file, line = fileline(lin[end][1])
     end
     file = maybe_fix_path(file)
     return file, line
@@ -251,7 +256,7 @@ function definition(::Type{Expr}, method::Method)
             end
         end
     end
-    return def === nothing || ismissing(def) ? nothing : copy(def[2])
+    return def === nothing || ismissing(def) ? nothing : copy(def[end][2])
 end
 
 definition(method::Method) = definition(Expr, method)
