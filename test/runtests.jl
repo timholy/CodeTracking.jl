@@ -6,7 +6,7 @@ using Test, InteractiveUtils
 
 using CodeTracking: line_is_decl
 
-isdefined(Main, :Revise) ? includet("script.jl") : include("script.jl")
+isdefined(Main, :Revise) ? Main.Revise.includet("script.jl") : include("script.jl")
 
 @testset "CodeTracking.jl" begin
     m = first(methods(f1))
@@ -171,4 +171,18 @@ end
         Base.@_inline_meta
         print("hello")
     end"""
+end
+
+@testset "kwargs methods" begin
+    m = nothing
+    for i in 1:30
+        s = Symbol("#func_2nd_kwarg#$i")
+        if isdefined(Main, s)
+            m = @eval $s
+        end
+    end
+    m === nothing && error("couldn't find keyword function")
+    body, loc = CodeTracking.definition(String, first(methods(m)))
+    @test loc == 28
+    @test body == "func_2nd_kwarg(; kw=2) = true"
 end

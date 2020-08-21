@@ -1,6 +1,10 @@
 function isfuncexpr(ex, name=nothing)
     checkname(fdef::Expr, name)            = checkname(fdef.args[1], name)
-    checkname(fname::Symbol, name::Symbol) = fname == name
+    checkname(fname::Symbol, name::Symbol) = begin
+        fname === name && return true
+        startswith(string(name), string('#', fname, '#')) && return true
+        return false
+    end
     checkname(fname::Symbol, ::Nothing)    = true
 
     # Strip any macros that wrap the method definition

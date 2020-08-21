@@ -23,3 +23,6 @@ function f50()   # issue #50
     todB(x) = 10*log10(x)
     println("100x is $(todB(100)) dB.")
 end
+
+func_1st_nokwarg() = true
+func_2nd_kwarg(; kw=2) = true
