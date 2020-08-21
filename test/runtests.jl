@@ -6,6 +6,10 @@ using Test, InteractiveUtils
 
 using CodeTracking: line_is_decl
 
+if !isempty(ARGS) && "revise" ∈ ARGS
+    using Revise
+end
+
 isdefined(Main, :Revise) ? includet("script.jl") : include("script.jl")
 
 @testset "CodeTracking.jl" begin
