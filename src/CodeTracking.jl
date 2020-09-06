@@ -214,7 +214,7 @@ function definition(::Type{String}, method::Method)
         push!(linestarts, istart)
         istart = findnext(eol, src, istart) + 1
     end
-    ex, iend = Meta.parse(src, istart)
+    ex, iend = Meta.parse(src, istart; raise=false)
     iend = prevind(src, iend)
     if isfuncexpr(ex, method.name)
         iend = min(iend, lastindex(src))
