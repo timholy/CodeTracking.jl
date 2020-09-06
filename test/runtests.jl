@@ -1,7 +1,7 @@
 # Note: some of CodeTracking's functionality can only be tested by Revise
 
 using CodeTracking
-using Test, InteractiveUtils
+using Test, InteractiveUtils, LinearAlgebra
 # Note: ColorTypes needs to be installed, but note the intentional absence of `using ColorTypes`
 
 using CodeTracking: line_is_decl
@@ -122,6 +122,11 @@ isdefined(Main, :Revise) ? Main.Revise.includet("script.jl") : include("script.j
         def = definition(Expr, m)
         @test isa(def, Expr)
     end
+
+    # Issue #64
+    B = Hermitian(hcat([one(BigFloat) + im]))
+    m = @which cholesky(B)
+    @test startswith(definition(String, m)[1], "cholesky")
 end
 
 @testset "With Revise" begin
