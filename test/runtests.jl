@@ -20,7 +20,6 @@ isdefined(Main, :Revise) ? Main.Revise.includet("script.jl") : include("script.j
         stacktrace(catch_backtrace())
     end
     @test whereis(trace[2]) == (scriptpath, 9)
-    @test whereis(trace[3]) === nothing
 
     src, line = definition(String, m)
     @test src == chomp("""
