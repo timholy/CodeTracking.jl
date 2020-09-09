@@ -1,10 +1,13 @@
 function checkname(fdef::Expr, name)
-    fdef.head === :where && return checkname(fdef.args[1], name)
-    if fdef.args[1] isa Expr
+    fproto = fdef.args[1]
+    fdef.head === :where && return checkname(fproto, name)
+    if fproto isa Expr
+        # Is the check below redundant?
+        fproto.head === :. || return false
         # E.g. `function Mod.bar.foo(a, b)`
-        return checkname(fdef.args[1].args[end], name)
+        return checkname(fproto.args[end], name)
     end
-    return checkname(fdef.args[1], name)
+    return checkname(fproto, name)
 end
 checkname(fname::Symbol, name::Symbol) = begin
     fname === name && return true

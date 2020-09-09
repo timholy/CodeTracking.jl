@@ -198,6 +198,5 @@ end
         return m
     end"""
     body, _ = CodeTracking.definition(String, @which Foo.Bar.fit(1, 2))
-    @show body
     @test body == "Foo.Bar.fit(a, b) = a + b"
 end
