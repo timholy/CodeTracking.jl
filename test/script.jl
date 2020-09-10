@@ -26,3 +26,15 @@ end
 
 func_1st_nokwarg() = true
 func_2nd_kwarg(; kw=2) = true
+
+module Foo
+module Bar
+function fit end
+end
+end
+
+function Foo.Bar.fit(m)
+    return m
+end
+
+Foo.Bar.fit(a, b) = a + b

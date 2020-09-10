@@ -190,3 +190,13 @@ end
     @test loc == 28
     @test body == "func_2nd_kwarg(; kw=2) = true"
 end
+
+@testset "method extensions" begin
+    body, _ = CodeTracking.definition(String, @which Foo.Bar.fit(1))
+    @test body == """
+    function Foo.Bar.fit(m)
+        return m
+    end"""
+    body, _ = CodeTracking.definition(String, @which Foo.Bar.fit(1, 2))
+    @test body == "Foo.Bar.fit(a, b) = a + b"
+end

@@ -1,27 +1,30 @@
-function isfuncexpr(ex, name=nothing)
-    checkname(fdef::Expr, name)            = checkname(fdef.args[1], name)
-    checkname(fname::Symbol, name::Symbol) = begin
-        fname === name && return true
-        startswith(string(name), string('#', fname, '#')) && return true
-        return false
+function checkname(fdef::Expr, name)
+    fproto = fdef.args[1]
+    fdef.head === :where && return checkname(fproto, name)
+    if fproto isa Expr
+        # Is the check below redundant?
+        fproto.head === :. || return false
+        # E.g. `function Mod.bar.foo(a, b)`
+        return checkname(fproto.args[end], name)
     end
-    checkname(fname::Symbol, ::Nothing)    = true
+    return checkname(fproto, name)
+end
+checkname(fname::Symbol, name::Symbol) = begin
+    fname === name && return true
+    startswith(string(name), string('#', fname, '#')) && return true
+    return false
+end
+checkname(fname::Symbol, ::Nothing) = true
+checkname(fname::QuoteNode, name) = checkname(fname.value, name)
 
+function isfuncexpr(ex, name=nothing)
     # Strip any macros that wrap the method definition
-    while isexpr(ex, :macrocall) && length(ex.args) == 3
+    while ex isa Expr && ex.head === :macrocall && length(ex.args) == 3
         ex = ex.args[3]
     end
     isa(ex, Expr) || return false
-    ex.head == :function && return checkname(ex, name)
-    if ex.head == :(=)
-        a = ex.args[1]
-        if isa(a, Expr)
-            while a.head == :where
-                a = a.args[1]
-                isa(a, Expr) || return false
-            end
-            a.head == :call && return checkname(a, name)
-        end
+    if ex.head === :function || ex.head === :(=)
+        return checkname(ex.args[1], name)
     end
     return false
 end
@@ -35,7 +38,7 @@ end
 linerange(arg) = linerange(convert(Expr, arg))  # Handle Revise's RelocatableExpr
 
 function findline(ex, order)
-    ex.head == :line && return ex.args[1], true
+    ex.head === :line && return ex.args[1], true
     for a in order(ex.args)
         a isa LineNumberNode && return a.line, true
         if a isa Expr
