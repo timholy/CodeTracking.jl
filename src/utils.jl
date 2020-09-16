@@ -1,3 +1,19 @@
+# An optimization to reduce the amount of time spent re-parsing Manifest.toml
+# Revise may invalidate this if the active manifest file changes
+if isdefined(Base, :TOMLCache)
+    const tomlcache = Ref{Union{Nothing,Base.TOMLCache}}(nothing)
+    function locate_package(id::PkgId)
+        cache = tomlcache[]
+        if cache === nothing
+            cache = tomlcache[] = Base.TOMLCache()
+        end
+        return Base.locate_package(id, cache)
+    end
+else
+    const tomlcache = Ref(nothing)
+    locate_package(id::PkgId) = Base.locate_package(id)
+end
+
 function checkname(fdef::Expr, name)
     fproto = fdef.args[1]
     fdef.head === :where && return checkname(fproto, name)
@@ -86,7 +102,7 @@ end
 
 function basepath(id::PkgId)
     id.name ∈ ("Main", "Base", "Core") && return ""
-    loc = Base.locate_package(id)
+    loc = locate_package(id)
     loc === nothing && return ""
     return dirname(dirname(loc))
 end
