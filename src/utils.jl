@@ -9,9 +9,17 @@ if isdefined(Base, :TOMLCache)
         end
         return Base.locate_package(id, cache)
     end
+    function project_deps_get(env::String, name::String)
+        cache = tomlcache[]
+        if cache === nothing
+            cache = tomlcache[] = Base.TOMLCache()
+        end
+        return Base.project_deps_get(env, name, cache)
+    end
 else
     const tomlcache = Ref(nothing)
     locate_package(id::PkgId) = Base.locate_package(id)
+    project_deps_get(env::String, name::String) = Base.project_deps_get(env, name)
 end
 
 function checkname(fdef::Expr, name)

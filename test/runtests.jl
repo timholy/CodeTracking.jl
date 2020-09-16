@@ -136,7 +136,9 @@ end
         @test !isempty(sigs)
         ex = @code_expr(gcd(10, 20))
         @test ex isa Expr
-        @test occursin(String(m.file), String(ex.args[2].args[2].args[1].file))
+        lnn = ex.args[2].args[2]
+        lnn = isa(lnn, LineNumberNode) ? lnn : lnn.args[1]
+        @test occursin(String(m.file), String(lnn.file))
         @test ex == code_expr(gcd, Tuple{Int,Int})
 
         m = first(methods(edit))
