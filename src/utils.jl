@@ -76,7 +76,7 @@ function src_from_file_or_REPL(origin::AbstractString, args...)
     if m !== nothing
         return src_from_REPL(m.captures[1], args...)
     end
-    isfile(origin) || return ""
+    isfile(origin) || return nothing
     return read(origin, String)
 end
 
