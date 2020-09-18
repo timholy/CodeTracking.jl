@@ -21,9 +21,9 @@ notifications:
 script:
     - export JULIA_PROJECT=""
     - julia --project -e 'using Pkg; Pkg.build(); Pkg.test();'
-    - julia -e 'using Pkg; Pkg.develop(PackageSpec(path="."));
+    - if [ "$TRAVIS_OS_NAME" = "linux" ]; then julia -e 'using Pkg; Pkg.develop(PackageSpec(path="."));
                            Pkg.add(PackageSpec(url="https://github.com/timholy/Revise.jl"));
-                           Pkg.test("Revise")'
+                           Pkg.test("Revise")'; fi
 
 after_success:
   - julia -e 'import Pkg; Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
