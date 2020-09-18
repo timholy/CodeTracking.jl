@@ -206,6 +206,7 @@ function definition(::Type{String}, method::Method)
     file, line = whereis(method)
     line == 0 && return nothing
     src = src_from_file_or_REPL(file)
+    src === nothing && return nothing
     src = replace(src, "\r"=>"")
     eol = isequal('\n')
     linestarts = Int[]
@@ -222,7 +223,8 @@ function definition(::Type{String}, method::Method)
     end
     # The function declaration was presumably on a previous line
     lineindex = lastindex(linestarts)
-    while !isfuncexpr(ex, method.name) && lineindex > 0
+    linestop = max(0, lineindex - 20)
+    while !isfuncexpr(ex, method.name) && lineindex > linestop
         istart = linestarts[lineindex]
         try
             ex, iend = Meta.parse(src, istart)
@@ -231,6 +233,7 @@ function definition(::Type{String}, method::Method)
         lineindex -= 1
         line -= 1
     end
+    lineindex <= linestop && return nothing
     return chomp(src[istart:iend-1]), line
 end
 

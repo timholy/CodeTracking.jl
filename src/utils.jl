@@ -7,6 +7,7 @@ function checkname(fdef::Expr, name)
         # E.g. `function Mod.bar.foo(a, b)`
         return checkname(fproto.args[end], name)
     end
+    isa(fproto, Symbol) || isa(fproto, QuoteNode) || isa(fproto, Expr) || return false
     return checkname(fproto, name)
 end
 checkname(fname::Symbol, name::Symbol) = begin
@@ -75,6 +76,7 @@ function src_from_file_or_REPL(origin::AbstractString, args...)
     if m !== nothing
         return src_from_REPL(m.captures[1], args...)
     end
+    isfile(origin) || return nothing
     return read(origin, String)
 end
 
