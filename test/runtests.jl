@@ -132,6 +132,12 @@ isdefined(Main, :Revise) ? Main.Revise.includet("script.jl") : include("script.j
     m = which(+, (AbstractSparseVector, AbstractSparseVector))  # defined inside an `@eval`
     d = definition(String, m)
     @test d === nothing || isa(d[1], String)
+
+    # Check for existence of file
+    id = Base.PkgId("__PackagePrecompilationStatementModule")
+    mod = Base.root_module(id)
+    m = first(methods(getfield(mod, :eval)))
+    @test definition(String, m) === nothing
 end
 
 @testset "With Revise" begin
