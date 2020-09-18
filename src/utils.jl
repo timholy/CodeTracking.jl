@@ -7,6 +7,7 @@ function checkname(fdef::Expr, name)
         # E.g. `function Mod.bar.foo(a, b)`
         return checkname(fproto.args[end], name)
     end
+    isa(fproto, Symbol) || isa(fproto, QuoteNode) || isa(fproto, Expr) || return false
     return checkname(fproto, name)
 end
 checkname(fname::Symbol, name::Symbol) = begin
