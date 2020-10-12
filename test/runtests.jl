@@ -134,10 +134,12 @@ isdefined(Main, :Revise) ? Main.Revise.includet("script.jl") : include("script.j
     @test d === nothing || isa(d[1], String)
 
     # Check for existence of file
-    id = Base.PkgId("__PackagePrecompilationStatementModule")
-    mod = Base.root_module(id)
-    m = first(methods(getfield(mod, :eval)))
-    @test definition(String, m) === nothing
+    id = Base.PkgId("__PackagePrecompilationStatementModule")   # not all Julia versions have this
+    mod = try Base.root_module(id) catch nothing end
+    if isa(mod, Module)
+        m = first(methods(getfield(mod, :eval)))
+        @test definition(String, m) === nothing
+    end
 end
 
 @testset "With Revise" begin

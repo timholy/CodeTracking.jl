@@ -299,8 +299,8 @@ pkgfiles(name::AbstractString, uuid::UUID) = pkgfiles(PkgId(uuid, name))
 function pkgfiles(name::AbstractString)
     project = Base.active_project()
     # The value returned by Base.project_deps_get depends on the Julia version
-    id = isdefined(Base, :TOMLCache) ? Base.project_deps_get(project, name, Base.TOMLCache()) :
-                                       Base.project_deps_get(project, name)
+    id = isdefined(Base, :TOMLCache) && Base.VERSION < v"1.6.0-DEV.1180" ? Base.project_deps_get(project, name, Base.TOMLCache()) :
+                                                                           Base.project_deps_get(project, name)
     (id == false || id === nothing) && error("no package ", name, " recognized")
     return isa(id, PkgId) ? pkgfiles(id) : pkgfiles(name, id)
 end
