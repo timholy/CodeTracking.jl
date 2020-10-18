@@ -98,7 +98,7 @@ Return the file and line number associated with a specific statement in `method`
 `lineinfo.line` should contain the line number of the statement at the time `method`
 was compiled. The current location is returned.
 """
-function whereis(lineinfo, method::Method)
+function whereis(lineinfo::Union{LineNumberNode,StackTraces.StackFrame}, method::Method)
     file, line1 = whereis(method)
     # We could be in an expanded macro. Apply the correction only if the filename checks out.
     # (We're not super-fastidious here because of symlinks and other path ambiguities)
