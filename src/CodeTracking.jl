@@ -110,7 +110,11 @@ function whereis(lineinfo, method::Method)
 end
 function whereis(lineinfo::Core.LineInfoNode, method::Method)
     # With LineInfoNode we have certainty about whether we're in a macro expansion
-    if lineinfo.method == Symbol("macro expansion")
+    meth = lineinfo.method
+    if isa(meth, WeakRef)
+        meth = meth.value
+    end
+    if meth === Symbol("macro expansion")
         return maybe_fix_path(String(lineinfo.file)), lineinfo.line
     end
     file, line1 = whereis(method)
