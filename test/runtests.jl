@@ -216,6 +216,6 @@ end
 
 @testset "Path ~ expansion" begin
     # GitHub actions names some of their runners RUNNER~1, and `expanduser` sometimes messes with that
-    pth = CodeTracking.maybe_fix_path("C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\jl_5DB3.tmp\\A2D")
+    pth = CodeTracking.maybe_fix_path("Users\\RUNNER~1\\AppData\\Local\\Temp\\jl_5DB3.tmp\\A2D")
     @test occursin("~", pth)
 end
