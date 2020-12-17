@@ -213,3 +213,9 @@ end
     body, _ = CodeTracking.definition(String, @which Foo.Bar.fit(1, 2))
     @test body == "Foo.Bar.fit(a, b) = a + b"
 end
+
+@testset "Path ~ expansion" begin
+    # GitHub actions names some of their runners RUNNER~1, and `expanduser` sometimes messes with that
+    pth = CodeTracking.maybe_fix_path("C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\jl_5DB3.tmp\\A2D")
+    @test occursin("~", pth)
+end
