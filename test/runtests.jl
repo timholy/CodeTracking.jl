@@ -6,6 +6,11 @@ using Test, InteractiveUtils, LinearAlgebra, SparseArrays
 
 using CodeTracking: line_is_decl
 
+if !isempty(ARGS) && "revise" ∈ ARGS
+    # For running tests with and without Revise
+    using Revise
+end
+
 isdefined(Main, :Revise) ? Main.Revise.includet("script.jl") : include("script.jl")
 
 @testset "CodeTracking.jl" begin
