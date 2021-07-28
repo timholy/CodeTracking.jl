@@ -1,7 +1,10 @@
 function checkname(fdef::Expr, name)
     fproto = fdef.args[1]
     fdef.head === :where && return checkname(fproto, name)
+    fdef.head === :call || return false
     if fproto isa Expr
+        # A metaprogramming-generated function
+        fproto.head === :$ && return true   # uncheckable, let's assume all is well
         # Is the check below redundant?
         fproto.head === :. || return false
         # E.g. `function Mod.bar.foo(a, b)`
@@ -137,3 +140,35 @@ function postpath(filename, pre)
     post[1:1] == Base.Filesystem.path_separator && return post[2:end]
     return post
 end
+
+if Base.VERSION < v"1.1"
+    function splitpath(p::String)
+        # splitpath became available with Julia 1.1
+        # Implementation copied from Base except doesn't handle the drive
+        out = String[]
+        isempty(p) && (pushfirst!(out,p))  # "" means the current directory.
+        while !isempty(p)
+            dir, base = _splitdir_nodrive(p)
+            dir == p && (pushfirst!(out, dir); break)  # Reached root node.
+            if !isempty(base)  # Skip trailing '/' in basename
+                pushfirst!(out, base)
+            end
+            p = dir
+        end
+        return out
+    end
+    splitpath(p::AbstractString) = splitpath(String(p))
+
+    _splitdir_nodrive(path::String) = _splitdir_nodrive("", path)
+    function _splitdir_nodrive(a::String, b::String)
+        m = match(Base.Filesystem.path_dir_splitter,b)
+        m === nothing && return (a,b)
+        a = string(a, isempty(m.captures[1]) ? m.captures[2][1] : m.captures[1])
+        a, String(m.captures[3])
+    end
+end
+
+# Robust across Julia versions
+getpkgid(project::AbstractString, libname) = getpkgid(Base.project_deps_get(project, libname), libname)
+getpkgid(id::PkgId, libname) = id
+getpkgid(uuid::UUID, libname) = PkgId(uuid, libname)
