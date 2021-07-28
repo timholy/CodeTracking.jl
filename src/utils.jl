@@ -2,7 +2,7 @@
 # (or change the test)
 function checkname(fdef::Expr, name)
     fproto = fdef.args[1]
-    fdef.head === :where && return checkname(fproto, name)
+    (fdef.head === :where || fdef.head == :(::)) && return checkname(fproto, name)
     fdef.head === :call || return false
     if fproto isa Expr
         # A metaprogramming-generated function

@@ -38,3 +38,8 @@ function Foo.Bar.fit(m)
 end
 
 Foo.Bar.fit(a, b) = a + b
+
+# Issue #81
+function hasrettype(x::Real)::Float32
+    return x*x + x
+end

@@ -59,6 +59,12 @@ isdefined(Main, :Revise) ? Main.Revise.includet("script.jl") : include("script.j
     @test occursin("100x", src)
     @test line == 22
 
+    # Issue #81
+    m = which(hasrettype, (Int,))
+    src, line = definition(String, m)
+    @test occursin("Float32", src)
+    @test line == 43
+
     info = CodeTracking.PkgFiles(Base.PkgId(CodeTracking))
     @test Base.PkgId(info) === info.id
     @test CodeTracking.basedir(info) == dirname(@__DIR__)
