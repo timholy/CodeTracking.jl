@@ -143,7 +143,7 @@ function signatures_at(filename::AbstractString, line::Integer)
         spath = splitpath(rpath)
         libname = spath[1]
         project = Base.active_project()
-        id = PkgId(Base.project_deps_get(project, libname), libname)
+        id = getpkgid(project, libname)
         return signatures_at(id, joinpath(spath[2:end]...), line)
     end
     if startswith(filename, "REPL[")

@@ -131,7 +131,7 @@ isdefined(Main, :Revise) ? Main.Revise.includet("script.jl") : include("script.j
     # Ensure that we don't error on difficult cases
     m = which(+, (AbstractSparseVector, AbstractSparseVector))  # defined inside an `@eval`
     d = definition(String, m)
-    @test d === nothing || isa(d[1], String)
+    @test d === nothing || isa(d[1], AbstractString)
 
     # Check for existence of file
     id = Base.PkgId("__PackagePrecompilationStatementModule")   # not all Julia versions have this
@@ -149,7 +149,9 @@ end
         @test !isempty(sigs)
         ex = @code_expr(gcd(10, 20))
         @test ex isa Expr
-        @test occursin(String(m.file), String(ex.args[2].args[2].args[1].file))
+        body = ex.args[2]
+        idx = findfirst(x -> isa(x, LineNumberNode), body.args)
+        @test occursin(String(m.file), String(body.args[idx].file))
         @test ex == code_expr(gcd, Tuple{Int,Int})
 
         m = first(methods(edit))
