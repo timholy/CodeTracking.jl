@@ -47,7 +47,10 @@ jobs:
         run: julia -e 'using Pkg; Pkg.develop(PackageSpec(path=".")); Pkg.add(PackageSpec(url="https://github.com/timholy/Revise.jl")); Pkg.test("Revise")'
       - name: Test while running Revise
         if: ${{ matrix.os == 'ubuntu-latest' && matrix.version != '1.0' }}
-        run: julia -e 'using Pkg; Pkg.test("CodeTracking"; test_args=["revise"])'
+        run: julia -e 'using Pkg, CodeTracking;
+                       Pkg.activate(pkgdir(CodeTracking));
+                       Pkg.add("Revise");
+                       Pkg.test("CodeTracking"; coverage=true, test_args=["revise"])'
       - uses: julia-actions/julia-processcoverage@v1
       - uses: codecov/codecov-action@v1
         with:
