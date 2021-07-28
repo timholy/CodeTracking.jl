@@ -1,7 +1,7 @@
 # Note: some of CodeTracking's functionality can only be tested by Revise
 
 using CodeTracking
-using Test, InteractiveUtils, LinearAlgebra, SparseArrays
+using Test, InteractiveUtils, REPL, LinearAlgebra, SparseArrays
 # Note: ColorTypes needs to be installed, but note the intentional absence of `using ColorTypes`
 
 using CodeTracking: line_is_decl
@@ -67,6 +67,10 @@ isdefined(Main, :Revise) ? Main.Revise.includet("script.jl") : include("script.j
     show(io, info)
     str = String(take!(io))
     @test startswith(str, "PkgFiles(CodeTracking [da1fd8a2-8d9e-5ec2-8556-3022fb5608a2]):\n  basedir:")
+    ioctx = IOContext(io, :compact=>true)
+    show(ioctx, info)
+    str = String(take!(io))
+    @test match(r"PkgFiles\(CodeTracking, .*CodeTracking(\.jl)?, String\[\]\)", str) !== nothing
 
     @test pkgfiles("ColorTypes") === nothing
     @test_throws ErrorException pkgfiles("NotAPkg")
@@ -86,17 +90,6 @@ isdefined(Main, :Revise) ? Main.Revise.includet("script.jl") : include("script.j
     oldlookup = CodeTracking.method_lookup_callback[]
     CodeTracking.method_lookup_callback[] = m -> error("oops")
     @test whereis(m) == ("REPL[1]", 1)
-    # Test with definition(String, m)
-    if isdefined(Base, :active_repl)
-        hp = Base.active_repl.interface.modes[1].hist
-        fstr = "__fREPL__(x::Int16) = 0"
-        histidx = length(hp.history) + 1 - hp.start_idx
-        ex = Base.parse_input_line(fstr; filename="REPL[$histidx]")
-        f = Core.eval(Main, ex)
-        push!(hp.history, fstr)
-        @test definition(String, first(methods(f))) == (fstr, 1)
-        pop!(hp.history)
-    end
     CodeTracking.method_lookup_callback[] = oldlookup
 
     m = first(methods(Test.eval))
@@ -109,6 +102,10 @@ isdefined(Main, :Revise) ? Main.Revise.includet("script.jl") : include("script.j
     end
     m = first(methods(f150))
     src = Base.uncompressed_ast(m)
+    idx = findfirst(lin -> String(lin.file) == @__FILE__, src.linetable)
+    lin = src.linetable[idx]
+    file, line = whereis(lin, m)
+    @test endswith(file, String(lin.file))
     idx = findfirst(lin -> String(lin.file) != @__FILE__, src.linetable)
     lin = src.linetable[idx]
     file, line = whereis(lin, m)
@@ -167,6 +164,35 @@ end
 
         # issue #23
         @test !isempty(signatures_at("script.jl", 9))
+
+        @test_throws ArgumentError signatures_at("nofile.jl", 1)
+
+        if isdefined(Revise, :add_revise_deps)
+            Revise.add_revise_deps()
+            sigs = signatures_at(CodeTracking, "src/utils.jl", 5)
+            @test length(sigs) == 1       # only isn't available on julia 1.0
+            @test first(sigs) == Tuple{typeof(CodeTracking.checkname), Expr, Any}
+            @test pkgfiles(CodeTracking).id == Base.PkgId(CodeTracking)
+        end
+
+        # REPL (test copied from Revise)
+        if isdefined(Base, :active_repl)
+            hp = Base.active_repl.interface.modes[1].hist
+            fstr = "__fREPL__(x::Int16) = 0"
+            histidx = length(hp.history) + 1 - hp.start_idx
+            ex = Base.parse_input_line(fstr; filename="REPL[$histidx]")
+            f = Core.eval(Main, ex)
+            if ex.head === :toplevel
+                ex = ex.args[end]
+            end
+            push!(hp.history, fstr)
+            m = first(methods(f))
+            @test definition(String, first(methods(f))) == (fstr, 1)
+            @test !isempty(signatures_at(String(m.file), m.line))
+            pop!(hp.history)
+        elseif haskey(ENV, "CI")
+            error("CI Revise tests must be run with -i")
+        end
     end
 end
 

@@ -1,5 +1,8 @@
 # CodeTracking
 
+[![Build status](https://github.com/timholy/CodeTracking.jl/actions/workflows/ci.yml/badge.svg)](https://github.com/timholy/CodeTracking.jl/actions/workflows/ci.yml)
+[![Coverage](https://codecov.io/gh/timholy/CodeTracking.jl/branch/master/graph/badge.svg?token=bBzCYyj19O)](https://codecov.io/gh/timholy/CodeTracking.jl)
+
 CodeTracking can be thought of as an extension of Julia's
 [InteractiveUtils library](https://docs.julialang.org/en/latest/stdlib/InteractiveUtils/).
 It provides an interface for obtaining:
