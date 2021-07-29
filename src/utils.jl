@@ -1,3 +1,5 @@
+# This should stay as the first method because it's used in a test
+# (or change the test)
 function checkname(fdef::Expr, name)
     fproto = fdef.args[1]
     fdef.head === :where && return checkname(fproto, name)
