@@ -4,7 +4,7 @@
 [![Coverage](https://codecov.io/gh/timholy/CodeTracking.jl/branch/master/graph/badge.svg?token=bBzCYyj19O)](https://codecov.io/gh/timholy/CodeTracking.jl)
 
 CodeTracking can be thought of as an extension of Julia's
-[InteractiveUtils library](https://docs.julialang.org/en/latest/stdlib/InteractiveUtils/).
+[InteractiveUtils library](https://docs.julialang.org/en/v1/stdlib/InteractiveUtils/).
 It provides an interface for obtaining:
 
 - the strings and expressions of method definitions
