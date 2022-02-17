@@ -10,10 +10,10 @@ Note that `basedir` may be subsequently updated by Pkg operations such as `add` 
 mutable struct PkgFiles
     id::PkgId
     basedir::String
-    files::Vector{String}
+    files::Vector{<:Any}
 end
 
-PkgFiles(id::PkgId, path::AbstractString) = PkgFiles(id, path, String[])
+PkgFiles(id::PkgId, path::AbstractString) = PkgFiles(id, path, Any[])
 PkgFiles(id::PkgId, ::Nothing) = PkgFiles(id, "")
 PkgFiles(id::PkgId) = PkgFiles(id, normpath(basepath(id)))
 PkgFiles(id::PkgId, files::AbstractVector{<:AbstractString}) =
