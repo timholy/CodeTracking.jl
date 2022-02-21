@@ -252,3 +252,12 @@ end
     body, _ = CodeTracking.definition(String, @which Foo.Bar.fit(1, 2))
     @test body == "Foo.Bar.fit(a, b) = a + b"
 end
+
+struct CallOverload
+    z
+end
+(f::CallOverload)(arg) = f.z + arg
+@testset "call syntax" begin
+    body, _ = CodeTracking.definition(String, @which CallOverload(1)(1))
+    @test body == "(f::CallOverload)(arg) = f.z + arg"
+end
