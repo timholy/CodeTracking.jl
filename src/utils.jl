@@ -19,6 +19,7 @@ end
 checkname(fname::Symbol, name::Symbol) = begin
     fname === name && return true
     startswith(string(name), string('#', fname, '#')) && return true
+    string(name) == string(fname, "##kw") && return true
     return false
 end
 checkname(fname::Symbol, ::Nothing) = true
