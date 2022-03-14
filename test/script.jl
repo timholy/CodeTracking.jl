@@ -43,3 +43,7 @@ Foo.Bar.fit(a, b) = a + b
 function hasrettype(x::Real)::Float32
     return x*x + x
 end
+
+function fkw(; x=1)
+    x
+end
