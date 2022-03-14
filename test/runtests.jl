@@ -262,10 +262,12 @@ end
     @test body == "(f::CallOverload)(arg) = f.z + arg"
 end
 
+if VERSION >= v"1.6.0"
 @testset "kwfuncs" begin
     body, _ = CodeTracking.definition(String, @which fkw(; x=1))
     @test body == """
     function fkw(; x=1)
         x
     end"""
+end
 end
