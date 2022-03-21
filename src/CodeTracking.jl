@@ -298,11 +298,7 @@ Returns the code-string for the method definition for `f` with the specified typ
 """
 function code_string(f, t)
     def = definition(String, which(f, t))
-    if def === nothing
-        return nothing
-    else
-        return def[1]
-    end
+    return def === nothing ? nothing : def[1]
 end
 macro code_string(ex0...)
     InteractiveUtils.gen_call_with_extracted_types_and_kwargs(__module__, :code_string, ex0)
