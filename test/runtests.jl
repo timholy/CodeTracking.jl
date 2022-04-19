@@ -154,7 +154,7 @@ isdefined(Main, :Revise) ? Main.Revise.includet("script.jl") : include("script.j
     ex = :(f_no_linenum(::Int) = 1)
     deleteat!(ex.args[2].args, 1)    # delete the file & line number info
     eval(ex)
-    @test_nowarn code_string(f_no_linenum, (Int,))
+    @test code_string(f_no_linenum, (Int,)) === nothing
 end
 
 @testset "With Revise" begin
