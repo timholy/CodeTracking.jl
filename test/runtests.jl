@@ -148,6 +148,13 @@ isdefined(Main, :Revise) ? Main.Revise.includet("script.jl") : include("script.j
         m = first(methods(getfield(mod, :eval)))
         @test definition(String, m) === nothing
     end
+
+    # Related to issue [#51](https://github.com/timholy/CodeTracking.jl/issues/51)
+    # and https://github.com/JuliaDocs/Documenter.jl/issues/1779
+    ex = :(f_no_linenum(::Int) = 1)
+    deleteat!(ex.args[2].args, 1)    # delete the file & line number info
+    eval(ex)
+    @test_nowarn code_string(f_no_linenum, (Int,))
 end
 
 @testset "With Revise" begin
