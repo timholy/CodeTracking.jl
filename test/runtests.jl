@@ -76,7 +76,7 @@ isdefined(Main, :Revise) ? Main.Revise.includet("script.jl") : include("script.j
     ioctx = IOContext(io, :compact=>true)
     show(ioctx, info)
     str = String(take!(io))
-    @test match(r"PkgFiles\(CodeTracking, .*CodeTracking(\.jl)?, String\[\]\)", str) !== nothing
+    @test match(r"PkgFiles\(CodeTracking, .*CodeTracking(\.jl)?, Any\[\]\)", str) !== nothing
 
     @test pkgfiles("ColorTypes") === nothing
     @test_throws ErrorException pkgfiles("NotAPkg")
