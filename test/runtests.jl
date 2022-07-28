@@ -65,17 +65,23 @@ isdefined(Main, :Revise) ? Main.Revise.includet("script.jl") : include("script.j
     @test occursin("Float32", src)
     @test line == 43
 
+    info = CodeTracking.PkgFiles(Base.PkgId(CodeTracking), nothing)
+    @test isempty(CodeTracking.basedir(info))
+
+    info = CodeTracking.PkgFiles(Base.PkgId(CodeTracking), [])
+    @test length(CodeTracking.srcfiles(info)) == 0
+
     info = CodeTracking.PkgFiles(Base.PkgId(CodeTracking))
     @test Base.PkgId(info) === info.id
     @test CodeTracking.basedir(info) == dirname(@__DIR__)
 
-    io = IOBuffer()
+    io = PipeBuffer()
     show(io, info)
-    str = String(take!(io))
+    str = read(io, String)
     @test startswith(str, "PkgFiles(CodeTracking [da1fd8a2-8d9e-5ec2-8556-3022fb5608a2]):\n  basedir:")
     ioctx = IOContext(io, :compact=>true)
     show(ioctx, info)
-    str = String(take!(io))
+    str = read(io, String)
     @test match(r"PkgFiles\(CodeTracking, .*CodeTracking(\.jl)?, Any\[\]\)", str) !== nothing
 
     @test pkgfiles("ColorTypes") === nothing
@@ -98,8 +104,9 @@ isdefined(Main, :Revise) ? Main.Revise.includet("script.jl") : include("script.j
     @test whereis(m) == ("REPL[1]", 1)
     CodeTracking.method_lookup_callback[] = oldlookup
 
+    # Test implicit replacement of `BUILDBOT_STDLIB_PATH`
     m = first(methods(Test.eval))
-    @test occursin(Sys.STDLIB, whereis(m)[1])
+    @test isfile(whereis(m)[1])
 
     # https://github.com/JuliaDebug/JuliaInterpreter.jl/issues/150
     function f150()
