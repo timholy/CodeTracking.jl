@@ -264,9 +264,14 @@ struct CallOverload
     z
 end
 (f::CallOverload)(arg) = f.z + arg
+struct Functor end
+(::Functor)(x, y) = x+y
 @testset "call syntax" begin
     body, _ = CodeTracking.definition(String, @which CallOverload(1)(1))
     @test body == "(f::CallOverload)(arg) = f.z + arg"
+
+    body, _ = CodeTracking.definition(String, @which Functor()(1,2))
+    @test body == "(::Functor)(x, y) = x+y"
 end
 
 if VERSION >= v"1.6.0"
