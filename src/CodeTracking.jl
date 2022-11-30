@@ -108,18 +108,21 @@ Return the file and line number associated with a specific statement in `method`
 `lineinfo.line` should contain the line number of the statement at the time `method`
 was compiled. The current location is returned.
 """
-function whereis(lineinfo, method::Method)
+whereis(lineinfo, method::Method) = whereis((lineinfo.file, lineinfo.line), method)
+function whereis((curfile, curline)::NTuple{2, Any}, method::Method)
     file, line1 = whereis(method)
     # We could be in an expanded macro. Apply the correction only if the filename checks out.
     # (We're not super-fastidious here because of symlinks and other path ambiguities)
-    samefile = basename(file) == basename(String(lineinfo.file))
+    samefile = basename(file) == basename(String(curfile))
     if !samefile
-        return maybe_fix_path(String(lineinfo.file)), lineinfo.line
+        return maybe_fix_path(String(curfile)), curline
     end
-    return file, lineinfo.line - method.line + line1
+    return file, curline - method.line + line1
 end
 function whereis(lineinfo::Core.LineInfoNode, method::Method)
-    # With LineInfoNode we have certainty about whether we're in a macro expansion
+    # With LineInfoNode we have certainty about whether we're in a macro expansion, but
+    # we're still not guaranteed that the lineinfo points into the method otherwise
+    # (e.g. from generated or programatically defined methods)
     meth = lineinfo.method
     if isa(meth, WeakRef)
         meth = meth.value
@@ -127,8 +130,7 @@ function whereis(lineinfo::Core.LineInfoNode, method::Method)
     if meth === Symbol("macro expansion")
         return maybe_fix_path(String(lineinfo.file)), lineinfo.line
     end
-    file, line1 = whereis(method)
-    return file, lineinfo.line - method.line + line1
+    return whereis((lineinfo.file, lineinfo.line), method)
 end
 
 """
