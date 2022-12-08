@@ -122,7 +122,7 @@ end
 function whereis(lineinfo::Core.LineInfoNode, method::Method)
     # With LineInfoNode we have certainty about whether we're in a macro expansion, but
     # we're still not guaranteed that the lineinfo points into the method otherwise
-    # (e.g. from generated or programatically defined methods)
+    # (e.g. from generated or programmatically defined methods)
     meth = lineinfo.method
     if isa(meth, WeakRef)
         meth = meth.value
