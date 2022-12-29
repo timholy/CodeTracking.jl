@@ -149,3 +149,10 @@ end
 getpkgid(project::AbstractString, libname) = getpkgid(Base.project_deps_get(project, libname), libname)
 getpkgid(id::PkgId, libname) = id
 getpkgid(uuid::UUID, libname) = PkgId(uuid, libname)
+
+# Because IdDict's `setindex!` uses `@nospecialize` on both the key and value, it makes
+# callers vulnerable to invalidation. These convenience utilities allow callers to insulate
+# themselves from invalidation. These are used by Revise.
+# example package triggering invalidation: StaticArrays (new `convert(Type{Array{T,N}}, ::AbstractArray)` methods)
+invoked_setindex!(dct::IdDict{K,V}, @nospecialize(val), @nospecialize(key)) where {K,V} = Base.invokelatest(setindex!, dct, val, key)::typeof(dct)
+invoked_get!(::Type{T}, dct::IdDict{K,V}, @nospecialize(key)) where {K,V,T<:V} = Base.invokelatest(get!, T, dct, key)::V
