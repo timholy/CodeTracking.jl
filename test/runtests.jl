@@ -162,6 +162,11 @@ isdefined(Main, :Revise) ? Main.Revise.includet("script.jl") : include("script.j
     deleteat!(ex.args[2].args, 1)    # delete the file & line number info
     eval(ex)
     @test code_string(f_no_linenum, (Int,)) === nothing
+
+    # Invalidation-insulating methods used by Revise and perhaps others
+    d = IdDict{Union{String,Symbol},Union{Function,Vector{Function}}}()
+    CodeTracking.invoked_setindex!(d, sin, "sin")
+    @test CodeTracking.invoked_get!(Vector{Function}, d, :cos) isa Vector{Function}
 end
 
 @testset "With Revise" begin
@@ -281,7 +286,7 @@ struct Functor end
     @test body == "(::Functor)(x, y) = x+y"
 end
 
-if VERSION >= v"1.6.0"
+if v"1.6" <= VERSION < v"1.9"
 @testset "kwfuncs" begin
     body, _ = CodeTracking.definition(String, @which fkw(; x=1))
     @test body == """
