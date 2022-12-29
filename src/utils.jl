@@ -117,7 +117,7 @@ function maybe_fix_path(file)
 end
 
 safe_isfile(x) = try isfile(x); catch; false end
-const BUILDBOT_STDLIB_PATH = dirname(abspath(joinpath(String((@which uuid1()).file), "..", "..", "..")))
+const BUILDBOT_STDLIB_PATH = dirname(abspath(String((@which uuid1()).file), "..", "..", ".."))
 replace_buildbot_stdlibpath(str::String) = replace(str, BUILDBOT_STDLIB_PATH => Sys.STDLIB)
 """
     path = maybe_fixup_stdlib_path(path::String)
@@ -143,33 +143,6 @@ function postpath(filename, pre)
     post = filename[first(idx) + length(pre) : end]
     post[1:1] == Base.Filesystem.path_separator && return post[2:end]
     return post
-end
-
-if Base.VERSION < v"1.1"
-    function splitpath(p::String)
-        # splitpath became available with Julia 1.1
-        # Implementation copied from Base except doesn't handle the drive
-        out = String[]
-        isempty(p) && (pushfirst!(out,p))  # "" means the current directory.
-        while !isempty(p)
-            dir, base = _splitdir_nodrive(p)
-            dir == p && (pushfirst!(out, dir); break)  # Reached root node.
-            if !isempty(base)  # Skip trailing '/' in basename
-                pushfirst!(out, base)
-            end
-            p = dir
-        end
-        return out
-    end
-    splitpath(p::AbstractString) = splitpath(String(p))
-
-    _splitdir_nodrive(path::String) = _splitdir_nodrive("", path)
-    function _splitdir_nodrive(a::String, b::String)
-        m = match(Base.Filesystem.path_dir_splitter,b)
-        m === nothing && return (a,b)
-        a = string(a, isempty(m.captures[1]) ? m.captures[2][1] : m.captures[1])
-        a, String(m.captures[3])
-    end
 end
 
 # Robust across Julia versions
