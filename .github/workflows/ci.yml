@@ -52,7 +52,11 @@ jobs:
             sleep(2)
             cd("test")
             include("runtests.jl")
-            REPL.eval_user_input(:(exit()), Base.active_repl_backend)
+            if Base.VERSION.major == 1 && Base.VERSION.minor >= 9
+                REPL.eval_user_input(:(exit()), Base.active_repl_backend, Main)
+            else
+                REPL.eval_user_input(:(exit()), Base.active_repl_backend)
+            end
           '
       - uses: julia-actions/julia-processcoverage@latest
       - uses: codecov/codecov-action@v3
