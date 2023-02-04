@@ -20,6 +20,7 @@ checkname(fname::Symbol, name::Symbol) = begin
     fname === name && return true
     startswith(string(name), string('#', fname, '#')) && return true
     string(name) == string(fname, "##kw") && return true
+    match(r"^#\d+$", string(name)) !== nothing && return true  # support `f = x -> 2x`
     return false
 end
 checkname(fname::Symbol, ::Nothing) = true
