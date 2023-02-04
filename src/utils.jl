@@ -28,8 +28,8 @@ checkname(fname::QuoteNode, name) = checkname(fname.value, name)
 
 function isfuncexpr(ex, name=nothing)
     # Strip any macros that wrap the method definition
-    while ex isa Expr && ex.head === :macrocall && length(ex.args) == 3
-        ex = ex.args[3]
+    while ex isa Expr && ex.head === :macrocall && length(ex.args) >= 3
+        ex = ex.args[end]
     end
     isa(ex, Expr) || return false
     if ex.head === :function || ex.head === :(=)
