@@ -48,7 +48,7 @@ jobs:
           TERM="xterm" julia --project -i --code-coverage -e '
             using InteractiveUtils, REPL, Revise, Pkg
             Pkg.add("ColorTypes")
-            # @async(Base.run_main_repl(true, true, false, true, false))
+            @async(Base.run_main_repl(true, true, false, true, false))
             sleep(2)
             cd("test")
             include("runtests.jl")
