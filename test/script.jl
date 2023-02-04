@@ -53,14 +53,16 @@ f80 = x -> 2 * x^3 + 1
 
 # Issue #103
 if isdefined(Base, Symbol("@assume_effects"))
-    Base.@assume_effects :terminates_locally  function pow103(x)
-        # this :terminates_locally allows `pow` to be constant-folded
-        res = 1
-        1 < x < 20 || error("bad pow")
-        while x > 1
-            res *= x
-            x -= 1
+    @eval begin
+        Base.@assume_effects :terminates_locally  function pow103(x)
+            # this :terminates_locally allows `pow` to be constant-folded
+            res = 1
+            1 < x < 20 || error("bad pow")
+            while x > 1
+                res *= x
+                x -= 1
+            end
+            return res
         end
-        return res
     end
 end

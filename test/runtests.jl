@@ -174,7 +174,7 @@ isdefined(Main, :Revise) ? Main.Revise.includet("script.jl") : include("script.j
         m = only(methods(pow103))
         src, line = definition(String, m)
         @test occursin("res *= x", src)
-        @test line == 56
+        @test line == 57
     end
 
     # Invalidation-insulating methods used by Revise and perhaps others
