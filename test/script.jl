@@ -47,3 +47,6 @@ end
 function fkw(; x=1)
     x
 end
+
+# Issue #80
+f80 = x -> 2 * x^3 + 1

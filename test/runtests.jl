@@ -163,6 +163,12 @@ isdefined(Main, :Revise) ? Main.Revise.includet("script.jl") : include("script.j
     eval(ex)
     @test code_string(f_no_linenum, (Int,)) === nothing
 
+    # Issue #80
+    m = only(methods(f80))
+    src, line = definition(String, m)
+    @test occursin("x^3", src)
+    @test line == 52
+
     # Invalidation-insulating methods used by Revise and perhaps others
     d = IdDict{Union{String,Symbol},Union{Function,Vector{Function}}}()
     CodeTracking.invoked_setindex!(d, sin, "sin")
@@ -286,7 +292,7 @@ struct Functor end
     @test body == "(::Functor)(x, y) = x+y"
 end
 
-if v"1.6" <= VERSION < v"1.9"
+if v"1.6" <= VERSION < v"1.9-beta"
 @testset "kwfuncs" begin
     body, _ = CodeTracking.definition(String, @which fkw(; x=1))
     @test body == """
