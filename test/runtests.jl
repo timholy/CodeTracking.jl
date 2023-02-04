@@ -169,6 +169,14 @@ isdefined(Main, :Revise) ? Main.Revise.includet("script.jl") : include("script.j
     @test occursin("x^3", src)
     @test line == 52
 
+    # Issue #103
+    if isdefined(Base, Symbol("@assume_effects"))
+        m = only(methods(pow103))
+        src, line = definition(String, m)
+        @test occursin("res *= x", src)
+        @test line == 56
+    end
+
     # Invalidation-insulating methods used by Revise and perhaps others
     d = IdDict{Union{String,Symbol},Union{Function,Vector{Function}}}()
     CodeTracking.invoked_setindex!(d, sin, "sin")
