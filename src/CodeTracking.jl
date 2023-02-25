@@ -235,7 +235,7 @@ function definition(::Type{String}, method::Method)
     iend = prevind(src, iend)
     if isfuncexpr(ex, method.name)
         iend = min(iend, lastindex(src))
-        return strip(src[istart:iend], '\n'), line
+        return clean_source(src[istart:iend]), line
     end
     # The function declaration was presumably on a previous line
     lineindex = lastindex(linestarts)
@@ -250,7 +250,15 @@ function definition(::Type{String}, method::Method)
         line -= 1
     end
     lineindex <= linestop && return nothing
-    return chomp(src[istart:iend-1]), line
+    return clean_source(src[istart:iend-1]), line
+end
+
+function clean_source(src)
+    src = strip(src, '\n')
+    if endswith(src, ';')
+        src = src[1:prevind(src, end)]
+    end
+    return src
 end
 
 """

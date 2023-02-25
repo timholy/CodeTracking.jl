@@ -104,6 +104,9 @@ isdefined(Main, :Revise) ? Main.Revise.includet("script.jl") : include("script.j
     @test whereis(m) == ("REPL[1]", 1)
     CodeTracking.method_lookup_callback[] = oldlookup
 
+    # Method definitions ending in semicolon
+    @test code_string(has_semicolon1, (Int, Int)) == "has_semicolon1(x, y) = x + y"
+
     # Test implicit replacement of `BUILDBOT_STDLIB_PATH`
     m = first(methods(Test.eval))
     @test isfile(whereis(m)[1])
@@ -228,6 +231,15 @@ end
             m = first(methods(f))
             @test definition(String, first(methods(f))) == (fstr, 1)
             @test !isempty(signatures_at(String(m.file), m.line))
+
+            histidx += 1
+            fstr = "has_semicolon2(x, y) = x + y;"
+            ex = Base.parse_input_line(fstr; filename="REPL[$histidx]")
+            f = Core.eval(Main, ex)
+            push!(hp.history, fstr)
+            @test code_string(has_semicolon2, (Int, Int)) == "has_semicolon2(x, y) = x + y"
+
+            pop!(hp.history)
             pop!(hp.history)
         elseif haskey(ENV, "CI")
             error("CI Revise tests must be run with -i")
