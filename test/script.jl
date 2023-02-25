@@ -66,3 +66,5 @@ if isdefined(Base, Symbol("@assume_effects"))
         end
     end
 end
+
+has_semicolon1(x, y) = x + y;
