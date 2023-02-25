@@ -219,28 +219,48 @@ see [`definition(Expr, method::Method)`](@ref) instead.
 See also [`code_string`](@ref).
 """
 function definition(::Type{String}, method::Method)
+    methodname = method.name
+    if methodname == :kwcall # Julia 1.9+
+        # it seems better to have nkw, but see https://github.com/JuliaLang/julia/issues/48786
+        # The first `::typeof(f)` seems possibly unsafe because some kwargs could themselves function-typed
+        # Nevertheless this is our best hope.
+        p = Base.unwrap_unionall(method.sig).parameters
+        for i = 2:length(p)
+            T = p[i]
+            if T <: Function
+                mstring = string(nameof(T))
+                if startswith(mstring, '#')
+                    methodname = Symbol(mstring[2:end])
+                    break
+                end
+            end
+        end
+        methodname == :kwcall && error("could not identify method name in `Core.kwcall`")
+    end
     file, line = whereis(method)
     line == 0 && return nothing
-    src = src_from_file_or_REPL(file)
+    src = src_from_file_or_REPL(file)   # whole file contents
     src === nothing && return nothing
     src = replace(src, "\r"=>"")
+    # Step forward to the definition of this method, keeping track of positions of newlines
     eol = isequal('\n')
     linestarts = Int[]
     istart = 1
-    for i = 1:line-1
+    for _ = 1:line-1
         push!(linestarts, istart)
         istart = findnext(eol, src, istart) + 1
     end
+    # Parse the function definition (hoping that we've found the right location to start)
     ex, iend = Meta.parse(src, istart; raise=false)
     iend = prevind(src, iend)
-    if isfuncexpr(ex, method.name)
+    if isfuncexpr(ex, methodname)
         iend = min(iend, lastindex(src))
         return strip(src[istart:iend], '\n'), line
     end
     # The function declaration was presumably on a previous line
     lineindex = lastindex(linestarts)
     linestop = max(0, lineindex - 20)
-    while !isfuncexpr(ex, method.name) && lineindex > linestop
+    while !isfuncexpr(ex, methodname) && lineindex > linestop
         istart = linestarts[lineindex]
         try
             ex, iend = Meta.parse(src, istart)
