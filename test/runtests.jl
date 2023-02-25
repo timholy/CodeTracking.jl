@@ -300,7 +300,7 @@ struct Functor end
     @test body == "(::Functor)(x, y) = x+y"
 end
 
-if v"1.6" <= VERSION < v"1.9-beta"
+if v"1.6" <= VERSION
 @testset "kwfuncs" begin
     body, _ = CodeTracking.definition(String, @which fkw(; x=1))
     @test body == """
