@@ -88,11 +88,11 @@ isdefined(Main, :Revise) ? Main.Revise.includet("script.jl") : include("script.j
     @test_throws ErrorException pkgfiles("NotAPkg")
 
     # PartialStruct parametric constructors
-    m = @which NamedTuple{(:a,)}((1,))
+    m = @which LikeNamedTuple{(:a,)}((1,))
     _, line = whereis(m)
     def, linedef = definition(String, m)
     @test line == linedef
-    @test occursin("NamedTuple{names}", def)
+    @test occursin("LikeNamedTuple{names}", def)
 
     # Test a method marked as missing
     m = @which sum(1:5)
