@@ -68,3 +68,11 @@ if isdefined(Base, Symbol("@assume_effects"))
 end
 
 has_semicolon1(x, y) = x + y;
+
+struct LikeNamedTuple{names,V}
+    vals::V
+end
+
+LikeNamedTuple() = LikeNamedTuple{(),Tuple{}}(())
+
+LikeNamedTuple{names}(args::Tuple) where {names} = LikeNamedTuple{names,typeof(args)}(args)

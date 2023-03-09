@@ -6,6 +6,7 @@ function checkname(fdef::Expr, name)
     fdef.head === :call || return false
     if fproto isa Expr
         fproto.head == :(::) && return last(fproto.args) == name
+        fproto.head == :curly && return fproto.args[1] === name
         # A metaprogramming-generated function
         fproto.head === :$ && return true   # uncheckable, let's assume all is well
         # Is the check below redundant?
