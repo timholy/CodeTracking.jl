@@ -50,6 +50,7 @@ end
 
 # Issue #80
 f80 = x -> 2 * x^3 + 1
+f80_2 = (x, y) -> x*y
 
 # Issue #103
 if isdefined(Base, Symbol("@assume_effects"))
@@ -76,3 +77,28 @@ end
 LikeNamedTuple() = LikeNamedTuple{(),Tuple{}}(())
 
 LikeNamedTuple{names}(args::Tuple) where {names} = LikeNamedTuple{names,typeof(args)}(args)
+
+# Test @eval-ed methods
+# This is taken from the definition of `sin(::Int)` in Base, copied here for testing purposes
+# in case the implementation changes
+for f in (:mysin,)
+    @eval function ($f)(x::Real)
+        xf = float(x)
+        x === xf && throw(MethodError($f, (x,)))
+        return ($f)(xf)
+    end
+end
+mysin(x::AbstractFloat) = sin(x)
+
+unnamedarg(::Type{String}, x) = string(x)
+
+# "decorated" args
+nospec(@nospecialize(x)) = 2x
+nospec2(@nospecialize(x::AbstractVecOrMat)) = first(x)
+nospec3(name::Symbol, @nospecialize(arg=nothing)) = name
+withva(a...) = length(a)
+hasdefault(xd, yd=2) = xd + yd
+hasdefaulttypearg(::Type{T}=Rational{Int}) where T = zero(T)
+
+# tuple-destructuring
+diffminmax((min, max)) = max - min

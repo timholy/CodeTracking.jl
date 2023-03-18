@@ -1,12 +1,11 @@
 # This should stay as the first method because it's used in a test
 # (or change the test)
-function checkname(fdef::Expr, name)
-    fproto = fdef.args[1]
-    (fdef.head === :where || fdef.head == :(::)) && return checkname(fproto, name)
+function checkname(fdef::Expr, name)   # this is now unused
     fdef.head === :call || return false
+    fproto = fdef.args[1]
     if fproto isa Expr
-        fproto.head == :(::) && return last(fproto.args) == name
-        fproto.head == :curly && return fproto.args[1] === name
+        fproto.head == :(::) && return last(fproto.args) === name  # (obj::MyCallable)(x) = ...
+        fproto.head == :curly && return fproto.args[1] === name   # MyType{T}(x) = ...
         # A metaprogramming-generated function
         fproto.head === :$ && return true   # uncheckable, let's assume all is well
         # Is the check below redundant?
@@ -17,29 +16,108 @@ function checkname(fdef::Expr, name)
     isa(fproto, Symbol) || isa(fproto, QuoteNode) || isa(fproto, Expr) || return false
     return checkname(fproto, name)
 end
-checkname(fname::Symbol, name::Symbol) = begin
-    fname === name && return true
-    startswith(string(name), string('#', fname, '#')) && return true
-    string(name) == string(fname, "##kw") && return true
-    match(r"^#\d+$", string(name)) !== nothing && return true  # support `f = x -> 2x`
+
+function get_call_expr(@nospecialize(ex))
+    while isa(ex, Expr) && ex.head ∈ (:where, :(::))
+        ex = ex.args[1]
+    end
+    isexpr(ex, :call) && return ex
+    return nothing
+end
+
+function get_func_expr(@nospecialize(ex))
+    isa(ex, Expr) || return ex
+    # Strip any macros that wrap the method definition
+    while isa(ex, Expr) && ex.head ∈ (:toplevel, :macrocall)
+        ex.head == :macrocall && length(ex.args) < 3 && return ex
+        ex = ex.args[end]
+    end
+    isa(ex, Expr) || return ex
+    if ex.head == :(=) && length(ex.args) == 2
+        child1, child2 = ex.args
+        isexpr(get_call_expr(child1), :call) && return ex
+        isexpr(child2, :(->)) && return child2
+    end
+    return ex
+end
+
+function is_func_expr(@nospecialize(ex))
+    isa(ex, Expr) || return false
+    ex.head ∈ (:function, :(->)) && return true
+    if ex.head == :(=) && length(ex.args) == 2
+        child1 = ex.args[1]
+        isexpr(get_call_expr(child1), :call) && return true
+    end
     return false
 end
-checkname(fname::Symbol, ::Nothing) = true
-checkname(fname::QuoteNode, name) = checkname(fname.value, name)
 
-function isfuncexpr(ex, name=nothing)
-    # Strip any macros that wrap the method definition
-    if ex isa Expr && ex.head === :toplevel
-        ex = ex.args[end]
+function is_func_expr(@nospecialize(ex), name::Symbol)
+    ex = get_func_expr(ex)
+    is_func_expr(ex) || return false
+    return checkname(get_call_expr(ex.args[1]), name)
+end
+
+function is_func_expr(@nospecialize(ex), meth::Method)
+    @show ex
+    ex = get_func_expr(ex)
+    is_func_expr(ex) || return false
+    if ex.head == :(->)
+        exargs = ex.args[1]
+        if isexpr(exargs, :tuple)
+            exargs = exargs.args
+        elseif (isa(exargs, Expr) && exargs.head ∈ (:(::), :.)) || isa(exargs, Symbol)
+            exargs = [exargs]
+        elseif isa(exargs, Expr)
+            return false
+        end
+    else
+        callex = get_call_expr(ex.args[1])
+        isexpr(callex, :call) || return false
+        fname = callex.args[1]
+        if isexpr(fname, :curly)    # where clause
+            fname = fname.args[1]
+        end
+        if isexpr(fname, :., 2)        # module-qualified
+            fname = fname.args[2]
+            @assert isa(fname, QuoteNode)
+            fname = fname.value
+        end
+        if isexpr(fname, :(::))
+            fname = fname.args[end]
+        end
+        if !(isa(fname, Symbol) && is_gensym(fname)) && !isexpr(fname, :$)
+            # match the function name
+            fname === strip_gensym(meth.name) || return false
+        end
+        exargs = callex.args[2:end]
     end
-    while ex isa Expr && ex.head === :macrocall && length(ex.args) >= 3
-        ex = ex.args[end]
+    # match the argnames
+    if !isempty(exargs) && isexpr(first(exargs), :parameters)
+        popfirst!(exargs)   # don't match kwargs
     end
-    isa(ex, Expr) || return false
-    if ex.head === :function || ex.head === :(=)
-        return checkname(ex.args[1], name)
+    margs = Base.method_argnames(meth)
+    @show exargs margs
+    if is_kw_call(meth)
+        margs = margs[findlast(==(Symbol("")), margs)+1:end]
     end
-    return false
+    for (arg, marg) in zip(exargs, margs[2:end])
+        aname = get_argname(arg)
+        aname === marg || (aname === Symbol("#unused#") && marg === Symbol("")) || return false
+    end
+    return true  # this will match any fcn `() -> ...`, but file/line is the only thing we have
+end
+
+function get_argname(@nospecialize(ex))
+    isa(ex, Symbol) && return ex
+    isexpr(ex, :(::), 2) && return get_argname(ex.args[1])      # type-asserted
+    isexpr(ex, :(::), 1) && return Symbol("#unused#") # nameless args (e.g., `::Type{String}`)
+    isexpr(ex, :kw) && return get_argname(ex.args[1])           # default value
+    isexpr(ex, :(=)) && return get_argname(ex.args[1])          # default value inside `@nospecialize`
+    isexpr(ex, :macrocall) && return get_argname(ex.args[end])  # @nospecialize
+    isexpr(ex, :...) && return get_argname(only(ex.args))       # varargs
+    isexpr(ex, :tuple) && return Symbol("")                     # tuple-destructuring
+    dump(ex)
+    error("unexpected argument ", ex)
 end
 
 function linerange(def::Expr)
@@ -70,6 +148,34 @@ Base.convert(::Type{LineNumberNode}, lin::LineInfoNode) = LineNumberNode(lin.lin
 
 # This regex matches the pseudo-file name of a REPL history entry.
 const rREPL = r"^REPL\[(\d+)\]$"
+# Match anonymous function names
+const rexfanon = r"^#\d+$"
+# Match kwfunc method names
+const rexkwfunc = r"^#.*##kw$"
+
+is_gensym(s::Symbol) = is_gensym(string(s))
+is_gensym(str::AbstractString) = startswith(str, '#')
+
+strip_gensym(s::Symbol) = strip_gensym(string(s))
+function strip_gensym(str::AbstractString)
+    if startswith(str, '#')
+        idx = findnext('#', str, 2)
+        if idx !== nothing
+            return Symbol(str[2:idx-1])
+        end
+    end
+    endswith(str, "##kw") && return Symbol(str[1:end-4])
+    return Symbol(str)
+end
+
+if isdefined(Core, :kwcall)
+    is_kw_call(m::Method) = Base.unwrap_unionall(m.sig).parameters[1] === typeof(Core.kwcall)
+else
+    function is_kw_call(m::Method)
+        T = Base.unwrap_unionall(m.sig).parameters[1]
+        return match(rexkwfunc, string(T.name.name)) !== nothing
+    end
+end
 
 """
     src = src_from_file_or_REPL(origin::AbstractString, repl = Base.active_repl)
