@@ -60,6 +60,7 @@ end
 function is_func_expr(@nospecialize(ex), meth::Method)
     ex = get_func_expr(ex)
     is_func_expr(ex) || return false
+    fname = nothing
     if ex.head == :(->)
         exargs = ex.args[1]
         if isexpr(exargs, :tuple)
@@ -95,8 +96,8 @@ function is_func_expr(@nospecialize(ex), meth::Method)
         popfirst!(exargs)   # don't match kwargs
     end
     margs = Base.method_argnames(meth)
-    if is_kw_call(meth)
-        margs = margs[findlast(==(Symbol("")), margs)+1:end]
+    if is_kw_call(meth) || is_body_fcn(meth, fname)
+        margs = margs[findlast(==(Symbol("")), margs):end]
     end
     for (arg, marg) in zip(exargs, margs[2:end])
         aname = get_argname(arg)
@@ -174,6 +175,15 @@ else
         return match(rexkwfunc, string(T.name.name)) !== nothing
     end
 end
+
+is_body_fcn(m::Method, basename::Symbol) = match(Regex("^#$basename#\\d+\$"), string(m.name)) !== nothing
+function is_body_fcn(m::Method, basename::Expr)
+    basename.head == :. || return false
+    bn = basename.args[end]
+    @assert isa(bn, QuoteNode)
+    return is_body_fcn(m, bn.value)
+end
+is_body_fcn(m::Method, ::Nothing) = false
 
 """
     src = src_from_file_or_REPL(origin::AbstractString, repl = Base.active_repl)

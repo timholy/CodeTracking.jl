@@ -25,7 +25,7 @@ function f50()   # issue #50
 end
 
 func_1st_nokwarg() = true
-func_2nd_kwarg(; kw=2) = true
+func_2nd_kwarg(a, b; kw=2) = true
 
 module Foo
 module Bar

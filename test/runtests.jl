@@ -300,7 +300,7 @@ end
     fbody = Base.bodyfunction(mdirect)
     body, loc = CodeTracking.definition(String, first(methods(fbody)))
     @test loc == 28
-    @test body == "func_2nd_kwarg(; kw=2) = true"
+    @test body == "func_2nd_kwarg(a, b; kw=2) = true"
 end
 
 @testset "method extensions" begin
