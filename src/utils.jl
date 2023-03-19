@@ -58,7 +58,6 @@ function is_func_expr(@nospecialize(ex), name::Symbol)
 end
 
 function is_func_expr(@nospecialize(ex), meth::Method)
-    @show ex
     ex = get_func_expr(ex)
     is_func_expr(ex) || return false
     if ex.head == :(->)
@@ -96,7 +95,6 @@ function is_func_expr(@nospecialize(ex), meth::Method)
         popfirst!(exargs)   # don't match kwargs
     end
     margs = Base.method_argnames(meth)
-    @show exargs margs
     if is_kw_call(meth)
         margs = margs[findlast(==(Symbol("")), margs)+1:end]
     end
