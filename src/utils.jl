@@ -96,8 +96,9 @@ function is_func_expr(@nospecialize(ex), meth::Method)
         popfirst!(exargs)   # don't match kwargs
     end
     margs = Base.method_argnames(meth)
-    if is_kw_call(meth) || is_body_fcn(meth, fname)
-        margs = margs[findlast(==(Symbol("")), margs):end]
+    _, idx = kwmethod_basename(meth)
+    if idx > 0
+        margs = margs[idx:end]
     end
     for (arg, marg) in zip(exargs, margs[2:end])
         aname = get_argname(arg)
@@ -176,14 +177,39 @@ else
     end
 end
 
-is_body_fcn(m::Method, basename::Symbol) = match(Regex("^#$basename#\\d+\$"), string(m.name)) !== nothing
-function is_body_fcn(m::Method, basename::Expr)
-    basename.head == :. || return false
-    bn = basename.args[end]
-    @assert isa(bn, QuoteNode)
-    return is_body_fcn(m, bn.value)
+# is_body_fcn(m::Method, basename::Symbol) = match(Regex("^#$basename#\\d+\$"), string(m.name)) !== nothing
+# function is_body_fcn(m::Method, basename::Expr)
+#     basename.head == :. || return false
+#     return is_body_fcn(m, get_basename(basename))
+# end
+# is_body_fcn(m::Method, ::Nothing) = false
+# function get_basename(basename::Expr)
+#     bn = basename.args[end]
+#     @assert isa(bn, QuoteNode)
+#     return is_body_fcn(m, bn.value)
+# end
+
+function kwmethod_basename(meth::Method)
+    name = meth.name
+    mtch = match(r"^#+(.*)#", string(name))
+    name = mtch === nothing ? name : Symbol(only(mtch.captures))
+    ftypname = Symbol(string('#', name))
+    idx = findfirst(Base.unwrap_unionall(meth.sig).parameters) do @nospecialize(T)
+        if isa(T, DataType)
+            Tname = T.name.name
+            if Tname === :Type
+                p1 = Base.unwrap_unionall(T.parameters[1])
+                Tname = isa(p1, DataType) ? p1.name.name :
+                        isa(p1, TypeVar) ? p1.name : error("unexpected type ", typeof(p1), "for ", meth)
+                return Tname == name
+            end
+            return ftypname === Tname
+        end
+        false
+    end
+    idx === nothing && return name, 0
+    return name, idx
 end
-is_body_fcn(m::Method, ::Nothing) = false
 
 """
     src = src_from_file_or_REPL(origin::AbstractString, repl = Base.active_repl)

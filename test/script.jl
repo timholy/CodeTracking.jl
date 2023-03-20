@@ -80,9 +80,9 @@ LikeNamedTuple{names}(args::Tuple) where {names} = LikeNamedTuple{names,typeof(a
 
 # Test @eval-ed methods
 # This is taken from the definition of `sin(::Int)` in Base, copied here for testing purposes
-# in case the implementation changes
+# in case the implementation changes. Also added a kw.
 for f in (:mysin,)
-    @eval function ($f)(x::Real)
+    @eval function ($f)(x::Real; return_zero::Bool=false)
         xf = float(x)
         x === xf && throw(MethodError($f, (x,)))
         return ($f)(xf)

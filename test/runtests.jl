@@ -194,6 +194,14 @@ isdefined(Main, :Revise) ? Main.Revise.includet("script.jl") : include("script.j
     src, line = definition(String, m)
     @test occursin("xf", src)
     @test line == 85
+    m = only(methods(Base.bodyfunction(m)))
+    src, line = definition(String, m)
+    @test occursin("xf", src)
+    @test line == 85
+    m = @which mysin(0.5; return_zero=true)
+    src, line = definition(String, m)
+    @test occursin("xf", src)
+    @test line == 85
 
     # unnamed arguments
     m = which(unnamedarg, (Type{String}, Any))
