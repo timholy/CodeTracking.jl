@@ -111,3 +111,12 @@ mypush!(::Nowhere, _) = nothing
 let
     global inlet(x) = x^2
 end
+
+# Callables
+struct Gaussian
+    σ::Float64
+end
+(g::Gaussian)(x) = exp(-x^2 / (2*g.σ^2)) / (sqrt(2*π)*g.σ)
+struct Invert end
+(::Invert)(v::AbstractVector{Bool}) = (!).(v)
+(::Type{T})(itr) where {T<:Invert} = [!x for x in itr]

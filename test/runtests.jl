@@ -219,6 +219,24 @@ isdefined(Main, :Revise) ? Main.Revise.includet("script.jl") : include("script.j
     @test occursin("inlet(x)", src)
     @test line == 112
 
+    # Callables
+    gg = Gaussian(1.0)
+    m = @which gg(2)
+    src, line = definition(String, m)
+    @test occursin("::Gaussian)(x)", src)
+    @test line == 119
+    invt = Invert()
+    m = @which invt([false, true])
+    src, line = definition(String, m)
+    @test occursin("::Invert)(v", src)
+    @test line == 121
+
+    # Constructor with `where`
+    m = @which Invert((false, true))
+    src, line = definition(String, m)
+    @test occursin("(::Type{T})(itr) where {T<:Invert}", src)
+    @test line == 122
+
     # Invalidation-insulating methods used by Revise and perhaps others
     d = IdDict{Union{String,Symbol},Union{Function,Vector{Function}}}()
     CodeTracking.invoked_setindex!(d, sin, "sin")

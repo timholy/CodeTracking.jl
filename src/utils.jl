@@ -74,18 +74,35 @@ function is_func_expr(@nospecialize(ex), meth::Method)
         callex = get_call_expr(ex.args[1])
         isexpr(callex, :call) || return false
         fname = callex.args[1]
-        if isexpr(fname, :curly)    # where clause
-            fname = fname.args[1]
-        end
-        if isexpr(fname, :., 2)        # module-qualified
-            fname = fname.args[2]
-            @assert isa(fname, QuoteNode)
-            fname = fname.value
-        end
-        if isexpr(fname, :(::))
-            fname = fname.args[end]
+        modified = true
+        while modified
+            modified = false
+            if isexpr(fname, :curly)    # where clause
+                fname = fname.args[1]
+                modified = true
+            end
+            if isexpr(fname, :., 2)        # module-qualified
+                fname = fname.args[2]
+                @assert isa(fname, QuoteNode)
+                fname = fname.value
+                modified = true
+            end
+            if isexpr(fname, :(::))
+                fname = fname.args[end]
+                modified = true
+            end
         end
         if !(isa(fname, Symbol) && is_gensym(fname)) && !isexpr(fname, :$)
+            if fname === :Type && isexpr(ex.args[1], :where) && isexpr(callex.args[1], :(::)) && isexpr(callex.args[1].args[end], :curly)
+                Tsym = callex.args[1].args[end].args[2]
+                for wheretyp in ex.args[1].args[2:end]
+                    @assert isexpr(wheretyp, :(<:))
+                    if Tsym == wheretyp.args[1]
+                        fname = wheretyp.args[2]
+                        break
+                    end
+                end
+            end
             # match the function name
             fname === strip_gensym(meth.name) || return false
         end
