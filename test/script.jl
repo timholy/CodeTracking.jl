@@ -106,3 +106,8 @@ diffminmax((min, max)) = max - min
 # _ args
 struct Nowhere end
 mypush!(::Nowhere, _) = nothing
+
+# global
+let
+    global inlet(x) = x^2
+end

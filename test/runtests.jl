@@ -213,6 +213,12 @@ isdefined(Main, :Revise) ? Main.Revise.includet("script.jl") : include("script.j
     @test occursin("::Nowhere", src)
     @test line == 108
 
+    # global annotations
+    m = which(inlet, (Any,))
+    src, line = definition(String, m)
+    @test occursin("inlet(x)", src)
+    @test line == 112
+
     # Invalidation-insulating methods used by Revise and perhaps others
     d = IdDict{Union{String,Symbol},Union{Function,Vector{Function}}}()
     CodeTracking.invoked_setindex!(d, sin, "sin")

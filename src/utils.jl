@@ -28,7 +28,7 @@ end
 function get_func_expr(@nospecialize(ex))
     isa(ex, Expr) || return ex
     # Strip any macros that wrap the method definition
-    while isa(ex, Expr) && ex.head ∈ (:toplevel, :macrocall)
+    while isa(ex, Expr) && ex.head ∈ (:toplevel, :macrocall, :global, :local)
         ex.head == :macrocall && length(ex.args) < 3 && return ex
         ex = ex.args[end]
     end

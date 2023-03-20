@@ -254,11 +254,8 @@ function definition(::Type{String}, method::Method)
     # Parse the function definition (hoping that we've found the right location to start)
     ex, iend = Meta.parse(src, istart; raise=false)
     iend = prevind(src, iend)
-    if is_func_expr(ex, method)
-        iend = min(iend, lastindex(src))
-        return clean_source(src[istart:iend]), line
-    end
-    # The function declaration was presumably on a previous line
+    # The function declaration may have been on a previous line,
+    # allow some slop
     lineindex = lastindex(linestarts)
     linestop = max(0, lineindex - 20)
     while !is_func_expr(ex, method) && lineindex > linestop
