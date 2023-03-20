@@ -208,6 +208,10 @@ isdefined(Main, :Revise) ? Main.Revise.includet("script.jl") : include("script.j
     src, line = definition(String, m)
     @test occursin("string(x)", src)
     @test line == 93
+    m = which(mypush!, (Nowhere, Any))
+    src, line = definition(String, m)
+    @test occursin("::Nowhere", src)
+    @test line == 108
 
     # Invalidation-insulating methods used by Revise and perhaps others
     d = IdDict{Union{String,Symbol},Union{Function,Vector{Function}}}()

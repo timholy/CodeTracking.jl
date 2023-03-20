@@ -102,6 +102,7 @@ function is_func_expr(@nospecialize(ex), meth::Method)
     end
     for (arg, marg) in zip(exargs, margs[2:end])
         aname = get_argname(arg)
+        aname === :_ && continue
         aname === marg || (aname === Symbol("#unused#") && marg === Symbol("")) || return false
     end
     return true  # this will match any fcn `() -> ...`, but file/line is the only thing we have

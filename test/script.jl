@@ -80,7 +80,7 @@ LikeNamedTuple{names}(args::Tuple) where {names} = LikeNamedTuple{names,typeof(a
 
 # Test @eval-ed methods
 # This is taken from the definition of `sin(::Int)` in Base, copied here for testing purposes
-# in case the implementation changes. Also added a kw.
+# in case the implementation changes. Also added a (useless) kw.
 for f in (:mysin,)
     @eval function ($f)(x::Real; return_zero::Bool=false)
         xf = float(x)
@@ -90,7 +90,7 @@ for f in (:mysin,)
 end
 mysin(x::AbstractFloat) = sin(x)
 
-unnamedarg(::Type{String}, x) = string(x)
+unnamedarg(::Type{String}, x) = string(x)   # see more unnamed on line 108
 
 # "decorated" args
 nospec(@nospecialize(x)) = 2x
@@ -102,3 +102,7 @@ hasdefaulttypearg(::Type{T}=Rational{Int}) where T = zero(T)
 
 # tuple-destructuring
 diffminmax((min, max)) = max - min
+
+# _ args
+struct Nowhere end
+mypush!(::Nowhere, _) = nothing
