@@ -209,7 +209,11 @@ end
 
 function kwmethod_basename(meth::Method)
     name = meth.name
-    mtch = match(r"^#+(.*)#", string(name))
+    sname = string(name)
+    mtch = match(r"^(.*)##kw$", sname)
+    if mtch === nothing
+        mtch = match(r"^#+(.*)#", sname)
+    end
     name = mtch === nothing ? name : Symbol(only(mtch.captures))
     ftypname = Symbol(string('#', name))
     idx = findfirst(Base.unwrap_unionall(meth.sig).parameters) do @nospecialize(T)
