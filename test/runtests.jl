@@ -286,7 +286,7 @@ end
             end
             push!(hp.history, fstr)
             m = first(methods(f))
-            @test definition(String, first(methods(f))) == (fstr, 1)
+            @test definition(String, m) == (fstr, 1)
             @test !isempty(signatures_at(String(m.file), m.line))
 
             histidx += 1
