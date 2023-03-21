@@ -268,7 +268,7 @@ function definition(::Type{String}, method::Method)
         line -= 1
     end
     lineindex <= linestop && return nothing
-    return clean_source(src[istart:iend-1]), line
+    return clean_source(src[istart:prevind(src, iend)]), line
 end
 
 function clean_source(src)
