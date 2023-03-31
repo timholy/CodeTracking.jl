@@ -243,6 +243,7 @@ function definition(::Type{String}, method::Method)
     src === nothing && return nothing
     src = replace(src, "\r"=>"")
     # Step forward to the definition of this method, keeping track of positions of newlines
+    # Issue: in-code `'\n'`. To fix, presumably we'd have to parse the entire file.
     eol = isequal('\n')
     linestarts = Int[]
     istart = 1
@@ -250,17 +251,14 @@ function definition(::Type{String}, method::Method)
         push!(linestarts, istart)
         istart = findnext(eol, src, istart) + 1
     end
+    push!(linestarts, length(src) + 1)
     # Parse the function definition (hoping that we've found the right location to start)
     ex, iend = Meta.parse(src, istart; raise=false)
-    iend = prevind(src, iend)
-    if isfuncexpr(ex, methodname)
-        iend = min(iend, lastindex(src))
-        return clean_source(src[istart:iend]), line
-    end
-    # The function declaration was presumably on a previous line
+    # The function declaration may have been on a previous line,
+    # allow some slop
     lineindex = lastindex(linestarts)
     linestop = max(0, lineindex - 20)
-    while !isfuncexpr(ex, methodname) && lineindex > linestop
+    while !is_func_expr(ex, method) && lineindex > linestop
         istart = linestarts[lineindex]
         try
             ex, iend = Meta.parse(src, istart)
@@ -270,7 +268,7 @@ function definition(::Type{String}, method::Method)
         line -= 1
     end
     lineindex <= linestop && return nothing
-    return clean_source(src[istart:iend-1]), line
+    return clean_source(src[istart:prevind(src, iend)]), line
 end
 
 function clean_source(src)

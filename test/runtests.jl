@@ -136,14 +136,12 @@ isdefined(Main, :Revise) ? Main.Revise.includet("script.jl") : include("script.j
 
     # Issues raised in #48
     m = @which(sum([1]; dims=1))
+    def = definition(String, m)
+    @test isa(def[1], AbstractString)
     if !isdefined(Main, :Revise)
-        def = definition(String, m)
-        @test def === nothing || isa(def[1], AbstractString)
         def = definition(Expr, m)
         @test def === nothing || isa(def, Expr)
     else
-        def = definition(String, m)
-        @test isa(def[1], AbstractString)
         def = definition(Expr, m)
         @test isa(def, Expr)
     end
@@ -178,14 +176,66 @@ isdefined(Main, :Revise) ? Main.Revise.includet("script.jl") : include("script.j
     src, line = definition(String, m)
     @test occursin("x^3", src)
     @test line == 52
+    m = only(methods(f80_2))
+    src, line = definition(String, m)
+    @test occursin("x*y", src)
+    @test line == 53
 
     # Issue #103
     if isdefined(Base, Symbol("@assume_effects"))
         m = only(methods(pow103))
         src, line = definition(String, m)
         @test occursin("res *= x", src)
-        @test line == 57
+        @test line == 58
     end
+
+    # @eval-ed methods
+    m = which(mysin, (Real,))
+    src, line = definition(String, m)
+    @test occursin("xf", src)
+    @test line == 85
+    m = only(methods(Base.bodyfunction(m)))
+    src, line = definition(String, m)
+    @test occursin("xf", src)
+    @test line == 85
+    m = @which mysin(0.5; return_zero=true)
+    src, line = definition(String, m)
+    @test occursin("xf", src)
+    @test line == 85
+
+    # unnamed arguments
+    m = which(unnamedarg, (Type{String}, Any))
+    src, line = definition(String, m)
+    @test occursin("string(x)", src)
+    @test line == 93
+    m = which(mypush!, (Nowhere, Any))
+    src, line = definition(String, m)
+    @test occursin("::Nowhere", src)
+    @test line == 108
+
+    # global annotations
+    m = which(inlet, (Any,))
+    src, line = definition(String, m)
+    @test occursin("inlet(x)", src)
+    @test line == 112
+
+    # Callables
+    gg = Gaussian(1.0)
+    m = @which gg(2)
+    src, line = definition(String, m)
+    @test occursin("::Gaussian)(x)", src)
+    @test line == 119
+    invt = Invert()
+    m = @which invt([false, true])
+    src, line = definition(String, m)
+    @test occursin("::Invert)(v", src)
+    @test line == 121
+
+    # Constructor with `where`
+    m = @which Invert((false, true))
+    src, line = definition(String, m)
+    @test occursin("(::Type{T})(itr) where {T<:Invert}", src)
+    @test line == 122
 
     # Invalidation-insulating methods used by Revise and perhaps others
     d = IdDict{Union{String,Symbol},Union{Function,Vector{Function}}}()
@@ -236,7 +286,7 @@ end
             end
             push!(hp.history, fstr)
             m = first(methods(f))
-            @test definition(String, first(methods(f))) == (fstr, 1)
+            @test definition(String, m) == (fstr, 1)
             @test !isempty(signatures_at(String(m.file), m.line))
 
             histidx += 1
@@ -282,17 +332,11 @@ end
 end
 
 @testset "kwargs methods" begin
-    m = nothing
-    for i in 1:30
-        s = Symbol("#func_2nd_kwarg#$i")
-        if isdefined(Main, s)
-            m = @eval $s
-        end
-    end
-    m === nothing && error("couldn't find keyword function")
-    body, loc = CodeTracking.definition(String, first(methods(m)))
+    mdirect = only(methods(func_2nd_kwarg))
+    fbody = Base.bodyfunction(mdirect)
+    body, loc = CodeTracking.definition(String, first(methods(fbody)))
     @test loc == 28
-    @test body == "func_2nd_kwarg(; kw=2) = true"
+    @test body == "func_2nd_kwarg(a, b; kw=2) = true"
 end
 
 @testset "method extensions" begin
@@ -319,7 +363,6 @@ struct Functor end
     @test body == "(::Functor)(x, y) = x+y"
 end
 
-if v"1.6" <= VERSION
 @testset "kwfuncs" begin
     body, _ = CodeTracking.definition(String, @which fkw(; x=1))
     @test body == """
@@ -327,4 +370,27 @@ if v"1.6" <= VERSION
         x
     end"""
 end
+
+@testset "Decorated args" begin
+    body, _ = CodeTracking.definition(String, which(nospec, (Any,)))
+    @test body == "nospec(@nospecialize(x)) = 2x"
+    body, _ = CodeTracking.definition(String, which(nospec2, (Vector,)))
+    @test body == "nospec2(@nospecialize(x::AbstractVecOrMat)) = first(x)"
+    body, _ = CodeTracking.definition(String, which(nospec3, (Symbol,)))
+    @test body == "nospec3(name::Symbol, @nospecialize(arg=nothing)) = name"
+    body, _ = CodeTracking.definition(String, which(nospec3, (Symbol, String)))
+    @test body == "nospec3(name::Symbol, @nospecialize(arg=nothing)) = name"
+    body, _ = CodeTracking.definition(String, which(withva, (Char,)))
+    @test body == "withva(a...) = length(a)"
+    body, _ = CodeTracking.definition(String, which(hasdefault, (Int,)))
+    @test body == "hasdefault(xd, yd=2) = xd + yd"
+    body, _ = CodeTracking.definition(String, which(hasdefault, (Int, Float32)))
+    @test body == "hasdefault(xd, yd=2) = xd + yd"
+    body, _ = CodeTracking.definition(String, which(hasdefaulttypearg, (Type{Float32},)))
+    @test body == "hasdefaulttypearg(::Type{T}=Rational{Int}) where T = zero(T)"
+end
+
+@testset "tuple-destructured args" begin
+    body, _ = CodeTracking.definition(String, which(diffminmax, (Any,)))
+    @test body == "diffminmax((min, max)) = max - min"
 end

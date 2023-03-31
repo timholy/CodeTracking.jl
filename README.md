@@ -143,3 +143,8 @@ file/line info in the method itself if Revise isn't running.)
 
 CodeTracking is perhaps best thought of as the "query" part of Revise.jl,
 providing a lightweight and stable API for gaining access to information it maintains internally.
+
+## Limitations (without Revise)
+
+- parsing sometimes starts on the wrong line. Line numbers are determined by counting `'\n'` in the source file, without parsing the contents. Consequently quoted- or in-code `'\n'` can mess up CodeTracking's notion of line numbering
+- default constructor methods for `struct`s are not found
