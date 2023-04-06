@@ -118,7 +118,13 @@ function is_func_expr(@nospecialize(ex), meth::Method)
         margs = margs[idx:end]
     end
     for (arg, marg) in zip(exargs, margs[2:end])
-        isexpr(arg, :$) && continue
+        if isexpr(arg, :$)
+            # If this is a splat, we may not even have the right number of args. In that case,
+            # just trust the matching we've done so far.
+            lastarg = arg.args[end]
+            isexpr(lastarg, :...) && return true
+            continue
+        end
         aname = get_argname(arg)
         aname === :_ && continue
         aname === marg || (aname === Symbol("#unused#") && marg === Symbol("")) || return false
