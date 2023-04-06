@@ -202,40 +202,44 @@ isdefined(Main, :Revise) ? Main.Revise.includet("script.jl") : include("script.j
     src, line = definition(String, m)
     @test occursin("xf", src)
     @test line == 85
+    m = which(dollaratan, (Real, Real))
+    src, line = definition(String, m)
+    @test occursin("atan(y, x)", src)
+    @test line == 93
 
     # unnamed arguments
     m = which(unnamedarg, (Type{String}, Any))
     src, line = definition(String, m)
     @test occursin("string(x)", src)
-    @test line == 93
+    @test line == 98
     m = which(mypush!, (Nowhere, Any))
     src, line = definition(String, m)
     @test occursin("::Nowhere", src)
-    @test line == 108
+    @test line == 113
 
     # global annotations
     m = which(inlet, (Any,))
     src, line = definition(String, m)
     @test occursin("inlet(x)", src)
-    @test line == 112
+    @test line == 117
 
     # Callables
     gg = Gaussian(1.0)
     m = @which gg(2)
     src, line = definition(String, m)
     @test occursin("::Gaussian)(x)", src)
-    @test line == 119
+    @test line == 124
     invt = Invert()
     m = @which invt([false, true])
     src, line = definition(String, m)
     @test occursin("::Invert)(v", src)
-    @test line == 121
+    @test line == 126
 
     # Constructor with `where`
     m = @which Invert((false, true))
     src, line = definition(String, m)
     @test occursin("(::Type{T})(itr) where {T<:Invert}", src)
-    @test line == 122
+    @test line == 127
 
     # Invalidation-insulating methods used by Revise and perhaps others
     d = IdDict{Union{String,Symbol},Union{Function,Vector{Function}}}()

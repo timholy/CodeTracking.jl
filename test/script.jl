@@ -89,6 +89,11 @@ for f in (:mysin,)
     end
 end
 mysin(x::AbstractFloat) = sin(x)
+let args = [:(y::Real), :(x::Real)]
+    @eval function dollaratan($(args...))
+        return atan(y, x)
+    end
+end
 
 unnamedarg(::Type{String}, x) = string(x)   # see more unnamed on line 108
 

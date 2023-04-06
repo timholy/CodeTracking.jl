@@ -118,6 +118,7 @@ function is_func_expr(@nospecialize(ex), meth::Method)
         margs = margs[idx:end]
     end
     for (arg, marg) in zip(exargs, margs[2:end])
+        isexpr(arg, :$) && continue
         aname = get_argname(arg)
         aname === :_ && continue
         aname === marg || (aname === Symbol("#unused#") && marg === Symbol("")) || return false
