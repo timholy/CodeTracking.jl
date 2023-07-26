@@ -168,8 +168,8 @@ end
 fileline(lin::LineInfoNode)   = String(lin.file), lin.line
 fileline(lnn::LineNumberNode) = String(lnn.file), lnn.line
 
-# This is piracy, but it's not ambiguous in terms of what it should do
-Base.convert(::Type{LineNumberNode}, lin::LineInfoNode) = LineNumberNode(lin.line, lin.file)
+# We don't want to pirate Base
+my_convert(::Type{LineNumberNode}, lin::LineInfoNode) = LineNumberNode(lin.line, lin.file)
 
 # This regex matches the pseudo-file name of a REPL history entry.
 const rREPL = r"^REPL\[(\d+)\]$"
