@@ -91,6 +91,10 @@ function is_func_expr(@nospecialize(ex), meth::Method)
                 fname = fname.args[end]
                 modified = true
             end
+            if isexpr(fname, :where)
+                fname = fname.args[1]
+                modified = true
+            end
         end
         if !(isa(fname, Symbol) && is_gensym(fname)) && !isexpr(fname, :$)
             if fname === :Type && isexpr(ex.args[1], :where) && isexpr(callex.args[1], :(::)) && isexpr(callex.args[1].args[end], :curly)
