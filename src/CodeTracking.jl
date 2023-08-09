@@ -219,7 +219,7 @@ see [`definition(Expr, method::Method)`](@ref) instead.
 See also [`code_string`](@ref).
 """
 function definition(::Type{String}, method::Method)
-    methodname = method.name
+    methodname::Symbol = method.name
     if methodname == :kwcall # Julia 1.9+
         # it seems better to have nkw, but see https://github.com/JuliaLang/julia/issues/48786
         # The first `::typeof(f)` seems possibly unsafe because some kwargs could themselves function-typed
@@ -245,15 +245,13 @@ function definition(::Type{String}, method::Method)
     # Step forward to the definition of this method, keeping track of positions of newlines
     # Issue: in-code `'\n'`. To fix, presumably we'd have to parse the entire file.
     eol = isequal('\n')
-    linestarts = Int[]
+    linestarts = zeros(Int, line)
     istart = 1
-    for _ = 1:line-1
-        push!(linestarts, istart)
+    for i in 1:line-1
+        linestarts[i] = istart
         istart = findnext(eol, src, istart) + 1
     end
-    push!(linestarts, length(src) + 1)
-    # Parse the function definition (hoping that we've found the right location to start)
-    ex, iend = Meta.parse(src, istart; raise=false)
+    linestarts[end] = istart
     # The function declaration may have been on a previous line,
     # allow some slop
     lineindex = lastindex(linestarts)
@@ -267,14 +265,15 @@ function definition(::Type{String}, method::Method)
         end
         istart = linestarts[lineindex]
         try
+            # Parse the function definition (hoping that we've found the right location to start)
             ex, iend = Meta.parse(src, istart)
+            is_func_expr(ex, method) && return clean_source(src[istart:prevind(src, iend)]), line
         catch
         end
         lineindex -= 1
         line -= 1
     end
-    lineindex <= linestop && return nothing
-    return clean_source(src[istart:prevind(src, iend)]), line
+    return nothing
 end
 
 function clean_source(src)
