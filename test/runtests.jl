@@ -256,6 +256,12 @@ isdefined(Main, :Revise) ? Main.Revise.includet("script.jl") : include("script.j
     src, line = definition(String, m)
     @test occursin("(Array{T,N} where T)(x::AbstractArray{S,N}) where {S,N}", src)
     @test line == m.line
+
+    # Issue 115, Cthulhu issue 474
+    m = @which NamedTuple{(),Tuple{}}(())
+    src, line = definition(String, m)
+    @test occursin("NamedTuple{names, T}(args::T) where {names, T <: Tuple}", src)
+    @test line == m.line
 end
 
 @testset "With Revise" begin
