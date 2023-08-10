@@ -259,7 +259,7 @@ function definition(::Type{String}, method::Method)
     lineindex = lastindex(linestarts)
     linestop = max(0, lineindex - 20)
     while !is_func_expr(ex, method) && lineindex > linestop
-        if ex.head == :call && length(ex.args) > 1 && first(ex.args) == :eval && last(ex.args).head == :quote && length(last(ex.args).args) > 0
+        if isexpr(ex, :call) && length(ex.args) > 1 && first(ex.args) == :eval && isexpr(last(ex.args), :quote) && length(last(ex.args).args) > 0
             actual_ex = first(last(ex.args).args)
             if is_func_expr(actual_ex, method)
                 return clean_source(string(actual_ex)), line
