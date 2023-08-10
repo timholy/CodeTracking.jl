@@ -262,6 +262,10 @@ isdefined(Main, :Revise) ? Main.Revise.includet("script.jl") : include("script.j
     src, line = definition(String, m)
     @test occursin("NamedTuple{names, T}(args::T) where {names, T <: Tuple}", src)
     @test line == m.line
+
+    # Parsed result gives a symbol instead of expression
+    m = @which symbol_function(1)
+    @test_nowarn definition(String, m)
 end
 
 @testset "With Revise" begin

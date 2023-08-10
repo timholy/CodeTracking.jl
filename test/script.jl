@@ -124,3 +124,8 @@ end
 struct Invert end
 (::Invert)(v::AbstractVector{Bool}) = (!).(v)
 (::Type{T})(itr) where {T<:Invert} = [!x for x in itr]
+
+# USERID gets parsed into a Symbol
+struct symbol_struct2
+    USERID
+end; '\n' ;symbol_function(x) = x
