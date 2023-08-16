@@ -245,13 +245,16 @@ function definition(::Type{String}, method::Method)
     # Step forward to the definition of this method, keeping track of positions of newlines
     # Issue: in-code `'\n'`. To fix, presumably we'd have to parse the entire file.
     eol = isequal('\n')
-    linestarts = zeros(Int, line)
+    slop = 20
+    linestarts = zeros(Int, slop)
     istart = 1
-    for i in 1:line-1
-        linestarts[i] = istart
+    for _ in 1:line-slop-1
         istart = findnext(eol, src, istart) + 1
     end
-    linestarts[end] = istart
+    for i in 1:min(line, slop)
+        istart = findnext(eol, src, istart) + 1
+        linestarts[i] = istart
+    end
     # The function declaration may have been on a previous line,
     # allow some slop
     lineindex = lastindex(linestarts)
@@ -266,7 +269,8 @@ function definition(::Type{String}, method::Method)
         istart = linestarts[lineindex]
         try
             # Parse the function definition (hoping that we've found the right location to start)
-            ex, iend = Meta.parse(src, istart)
+            ex, iend = Meta.parse(src, istart; raise=!firstrun)
+            firstrun = false
             is_func_expr(ex, method) && return clean_source(src[istart:prevind(src, iend)]), line
         catch
         end
