@@ -248,32 +248,29 @@ function definition(::Type{String}, method::Method)
     slop = 20
     linestarts = zeros(Int, slop)
     istart = 1
-    for _ in 1:line-slop-1
+    lineindex = 1
+    for i in 1:line-1
+        if i > line - slop
+            linestarts[lineindex] = istart
+            lineindex += 1
+        end
         istart = findnext(eol, src, istart) + 1
     end
-    for i in 1:min(line, slop)
-        istart = findnext(eol, src, istart) + 1
-        linestarts[i] = istart
-    end
+    linestarts[lineindex] = istart
     # The function declaration may have been on a previous line,
     # allow some slop
-    lineindex = lastindex(linestarts)
-    linestop = max(0, lineindex - 20)
-    while !is_func_expr(ex, method) && lineindex > linestop
-        if isexpr(ex, :call) && length(ex.args) > 1 && first(ex.args) == :eval && isexpr(last(ex.args), :quote) && length(last(ex.args).args) > 0
-            actual_ex = first(last(ex.args).args)
-            if is_func_expr(actual_ex, method)
-                return clean_source(string(actual_ex)), line
-            end
-        end
+    while lineindex > 0
         istart = linestarts[lineindex]
-        try
-            # Parse the function definition (hoping that we've found the right location to start)
-            ex, iend = Meta.parse(src, istart; raise=!firstrun)
-            firstrun = false
-            is_func_expr(ex, method) && return clean_source(src[istart:prevind(src, iend)]), line
-        catch
+        # Parse the function definition (hoping that we've found the right location to start)
+        ex, iend = Meta.parse(src, istart; raise=false)
+
+        is_func_expr(ex, method) && return clean_source(src[istart:prevind(src, iend)]), line
+
+        if isexpr(ex, :call) && length(ex.args) > 1 && first(ex.args) == :eval && isexpr(last(ex.args), :quote) && length(last(ex.args).args) > 0
+            ex = first(last(ex.args).args)
+            is_func_expr(ex, method) && return clean_source(string(ex)), line
         end
+
         lineindex -= 1
         line -= 1
     end
