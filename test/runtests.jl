@@ -210,7 +210,9 @@ isdefined(Main, :Revise) ? Main.Revise.includet("script.jl") : include("script.j
     src, line = definition(String, m)
     @test occursin("x + y + z", src)
     @test line == 94
-
+    src, line = definition(String, only(methods(c470)))
+    @test occursin("\$argnames", src)
+    @test line == 137
 
     # unnamed arguments
     m = which(unnamedarg, (Type{String}, Any))
