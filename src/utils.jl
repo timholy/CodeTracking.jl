@@ -129,6 +129,10 @@ function is_func_expr(@nospecialize(ex), meth::Method)
             isexpr(lastarg, :...) && return true
             continue
         end
+        if isexpr(arg, :...)   # also test the other order of $ and ..., e.g., `c470($argnames...)`
+            lastarg = only(arg.args)
+            isexpr(lastarg, :$) && return true
+        end
         aname = get_argname(arg)
         aname === :_ && continue
         aname === marg || (aname === Symbol("#unused#") && marg === Symbol("")) || return false

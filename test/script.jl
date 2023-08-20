@@ -129,3 +129,13 @@ struct Invert end
 struct symbol_struct2
     USERID
 end; '\n' ;symbol_function(x) = x
+
+# https://github.com/JuliaDebug/Cthulhu.jl/issues/470
+# (arguments with evaled-names)
+let argnames = :args
+    eval(quote
+        function c470($argnames...)
+            return $argnames
+        end
+    end)
+end
