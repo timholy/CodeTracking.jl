@@ -219,7 +219,7 @@ see [`definition(Expr, method::Method)`](@ref) instead.
 See also [`code_string`](@ref).
 """
 function definition(::Type{String}, method::Method)
-    methodname::Symbol = method.name
+    methodname = method.name
     if methodname == :kwcall # Julia 1.9+
         # it seems better to have nkw, but see https://github.com/JuliaLang/julia/issues/48786
         # The first `::typeof(f)` seems possibly unsafe because some kwargs could themselves function-typed
@@ -262,7 +262,11 @@ function definition(::Type{String}, method::Method)
     while lineindex > 0
         istart = linestarts[lineindex]
         # Parse the function definition (hoping that we've found the right location to start)
-        ex, iend = Meta.parse(src, istart; raise=false)
+        ex, iend = try
+            Meta.parse(src, istart)
+        catch
+            nothing, nothing
+        end
 
         is_func_expr(ex, method) && return clean_source(src[istart:prevind(src, iend)]), line
 
