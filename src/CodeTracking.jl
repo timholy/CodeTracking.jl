@@ -251,7 +251,7 @@ function definition(::Type{String}, method::Method)
         push!(linestarts, istart)
         istart = findnext(eol, src, istart) + 1
     end
-    push!(linestarts, length(src) + 1)
+    push!(linestarts, istart)
     # Parse the function definition (hoping that we've found the right location to start)
     ex, iend = Meta.parse(src, istart; raise=false)
     # The function declaration may have been on a previous line,
