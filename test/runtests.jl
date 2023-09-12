@@ -268,6 +268,9 @@ isdefined(Main, :Revise) ? Main.Revise.includet("script.jl") : include("script.j
     # Parsed result gives a symbol instead of expression
     m = @which symbol_function(1)
     @test_nowarn definition(String, m)
+
+    # #124
+    @test definition(String, only(methods(wrongline))) === nothing
 end
 
 @testset "With Revise" begin

@@ -249,7 +249,9 @@ function definition(::Type{String}, method::Method)
     istart = 1
     for _ = 1:line-1
         push!(linestarts, istart)
-        istart = findnext(eol, src, istart) + 1
+        istart = findnext(eol, src, istart)
+        istart === nothing && return nothing   # unexpected EOF
+        istart += 1
     end
     push!(linestarts, istart)
     # Parse the function definition (hoping that we've found the right location to start)
