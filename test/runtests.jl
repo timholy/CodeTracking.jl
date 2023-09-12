@@ -270,7 +270,9 @@ isdefined(Main, :Revise) ? Main.Revise.includet("script.jl") : include("script.j
     @test_nowarn definition(String, m)
 
     # #124
-    @test definition(String, only(methods(wrongline))) === nothing
+    if !isdefined(Main, :Revise)
+        @test definition(String, only(methods(wrongline))) === nothing
+    end
 end
 
 @testset "With Revise" begin
