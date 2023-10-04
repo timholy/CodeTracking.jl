@@ -273,6 +273,12 @@ isdefined(Main, :Revise) ? Main.Revise.includet("script.jl") : include("script.j
     if !isdefined(Main, :Revise)
         @test definition(String, only(methods(wrongline))) === nothing
     end
+
+    # Nested `where`s
+    m = @which Parametric{2}(5)
+    src, line = definition(String, m)
+    @test occursin("::Type{P}", src)
+    @test line == 148
 end
 
 @testset "With Revise" begin

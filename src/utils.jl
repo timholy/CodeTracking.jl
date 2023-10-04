@@ -99,15 +99,25 @@ function is_func_expr(@nospecialize(ex), meth::Method)
         if !(isa(fname, Symbol) && is_gensym(fname)) && !isexpr(fname, :$)
             if fname === :Type && isexpr(ex.args[1], :where) && isexpr(callex.args[1], :(::)) && isexpr(callex.args[1].args[end], :curly)
                 Tsym = callex.args[1].args[end].args[2]
-                for wheretyp in ex.args[1].args[2:end]
-                    @assert isexpr(wheretyp, :(<:))
-                    if Tsym == wheretyp.args[1]
-                        fname = wheretyp.args[2]
-                        break
+                whereex = ex.args[1]
+                while true
+                    found = false
+                    for wheretyp in whereex.args[2:end]
+                        isexpr(wheretyp, :(<:)) || continue
+                        if Tsym == wheretyp.args[1]
+                            fname = wheretyp.args[2]
+                            found = true
+                            break
+                        end
                     end
+                    found && break
+                    whereex = whereex.args[1]
                 end
             end
             # match the function name
+            if isexpr(fname, :curly)
+                fname = fname.args[1]
+            end
             fname === strip_gensym(meth.name) || return false
         end
         exargs = callex.args[2:end]
