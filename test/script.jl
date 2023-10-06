@@ -142,3 +142,7 @@ end
 
 wrongline() = 1    # for use testing #124
 only(methods(wrongline)).line = 9999   # unclear how it happened in the wild, but this at least catches the problem
+
+# Nested `where`s
+struct Parametric{N} end
+(::Type{P})(x::Int) where P<:Parametric{N} where N = P()
