@@ -201,10 +201,10 @@ function strip_gensym(str::AbstractString)
     if startswith(str, '#')
         idx = findnext('#', str, 2)
         if idx !== nothing
-            return Symbol(str[2:idx-1])
+            return Symbol(str[2:prevind(str, idx)])
         end
     end
-    endswith(str, "##kw") && return Symbol(str[1:end-4])
+    endswith(str, "##kw") && return Symbol(str[1:prevind(str, end-3)])
     return Symbol(str)
 end
 
