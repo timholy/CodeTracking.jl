@@ -44,7 +44,7 @@ jobs:
             Pkg.test("Revise")
           '
       - name: Test while running Revise
-        if: ${{ matrix.os == 'ubuntu-latest' && matrix.version != '1.0' }}
+        if: ${{ matrix.os == 'ubuntu-latest' && (matrix.version == '1.6' || matrix.version == '1') }}
         run: |
           TERM="xterm" julia --project -i --code-coverage -e '
             using InteractiveUtils, REPL, Revise, Pkg
