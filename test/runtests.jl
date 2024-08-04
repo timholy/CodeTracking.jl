@@ -306,11 +306,13 @@ end
         @test occursin(String(m.file), String(body.args[idx].file))
         @test ex == code_expr(gcd, Tuple{Int,Int})
 
-        m = first(methods(edit))
-        sigs = signatures_at(String(m.file), m.line)
-        @test !isempty(sigs)
-        sigs = signatures_at(Base.find_source_file(String(m.file)), m.line)
-        @test !isempty(sigs)
+        if Base.VERSION < v"1.11.0-0"
+            m = first(methods(edit))
+            sigs = signatures_at(String(m.file), m.line)
+            @test !isempty(sigs)
+            sigs = signatures_at(Base.find_source_file(String(m.file)), m.line)
+            @test !isempty(sigs)
+        end
 
         # issue #23
         @test !isempty(signatures_at("script.jl", 9))
