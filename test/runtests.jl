@@ -247,6 +247,12 @@ isdefined(Main, :Revise) ? Main.Revise.includet("script.jl") : include("script.j
     src, line = definition(String, m)
     @test occursin("(::Type{T})(itr) where {T<:Invert}", src)
     @test line == 126
+    m = @which MyArray1{Float64, 1}(undef, 5)
+    src, line = definition(String, m)
+    @test occursin("(self::Type{MyArray1{T,1}})(::UndefInitializer", src)
+    m = @which MyArray2{Float64, 1}(undef, 5)
+    src, line = definition(String, m)
+    @test occursin("(::Type{MyArray2{T,1}})(::UndefInitializer", src)
 
     # Invalidation-insulating methods used by Revise and perhaps others
     d = IdDict{Union{String,Symbol},Union{Function,Vector{Function}}}()

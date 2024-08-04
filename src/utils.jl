@@ -111,7 +111,15 @@ function is_func_expr(@nospecialize(ex), meth::Method)
                         end
                     end
                     found && break
+                    if isexpr(whereex, :(::))
+                        typeex = whereex.args[end]
+                        if isexpr(typeex, :curly) && typeex.args[1] === :Type
+                            fname = typeex.args[2]
+                            break
+                        end
+                    end
                     whereex = whereex.args[1]
+                    isa(whereex, Expr) || return false
                 end
             end
             # match the function name

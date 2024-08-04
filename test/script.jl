@@ -146,3 +146,17 @@ only(methods(wrongline)).line = 9999   # unclear how it happened in the wild, bu
 # Nested `where`s
 struct Parametric{N} end
 (::Type{P})(x::Int) where P<:Parametric{N} where N = P()
+
+# `where`s that are not simply `(::Type{T})(args...) where T<:SomeSpecialType`
+struct MyArray1{T,N}
+    data::T
+end
+function (self::Type{MyArray1{T,1}})(::UndefInitializer, m::Int) where {T}
+    return nothing
+end
+struct MyArray2{T,N}
+    data::T
+end
+function (::Type{MyArray2{T,1}})(::UndefInitializer, m::Int) where {T}
+    return nothing
+end
