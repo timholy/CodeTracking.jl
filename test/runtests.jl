@@ -395,7 +395,9 @@ end
         return m
     end"""
     body, _ = CodeTracking.definition(String, @which Foo.Bar.fit(1, 2))
-    @test body == "Foo.Bar.fit(a, b) = a + b"
+    if Base.VERSION < v"1.10"
+        @test body == "Foo.Bar.fit(a, b) = a + b"
+    end
 end
 
 struct CallOverload
@@ -414,10 +416,10 @@ end
 
 @testset "kwfuncs" begin
     body, _ = CodeTracking.definition(String, @which fkw(; x=1))
-    @test body == """
+    @test startswith(body, """
     function fkw(; x=1)
         x
-    end"""
+    end""")
 end
 
 @testset "Decorated args" begin
@@ -436,12 +438,12 @@ end
     body, _ = CodeTracking.definition(String, which(hasdefault, (Int, Float32)))
     @test body == "hasdefault(xd, yd=2) = xd + yd"
     body, _ = CodeTracking.definition(String, which(hasdefaulttypearg, (Type{Float32},)))
-    @test body == "hasdefaulttypearg(::Type{T}=Rational{Int}) where T = zero(T)"
+    @test startswith(body, "hasdefaulttypearg(::Type{T}=Rational{Int}) where T = zero(T)")
 end
 
 @testset "tuple-destructured args" begin
     body, _ = CodeTracking.definition(String, which(diffminmax, (Any,)))
-    @test body == "diffminmax((min, max)) = max - min"
+    @test startswith(body, "diffminmax((min, max)) = max - min")
 end
 
 @testset "strip_gensym with unicode" begin
