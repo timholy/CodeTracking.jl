@@ -266,9 +266,9 @@ isdefined(Main, :Revise) ? Main.Revise.includet("script.jl") : include("script.j
     @test line == m.line
 
     # Issue 115, Cthulhu issue 474
-    m = @which NamedTuple{(),Tuple{}}(())
+    m = @which MyNamedTuple{(),Tuple{}}(())
     src, line = definition(String, m)
-    @test occursin("NamedTuple{names, T}(args::T) where {names, T <: Tuple}", src)
+    @test occursin("MyNamedTuple{names, T}(args::T) where {names, T <: Tuple}", src)
     @test line == m.line
 
     # Parsed result gives a symbol instead of expression

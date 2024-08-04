@@ -160,3 +160,9 @@ end
 function (::Type{MyArray2{T,1}})(::UndefInitializer, m::Int) where {T}
     return nothing
 end
+
+# Issue #115
+struct MyNamedTuple{names, T} end
+@eval (MyNamedTuple{names, T}(args::T) where {names, T <: Tuple}) = begin
+    $(Expr(:splatnew, :(MyNamedTuple{names, T}), :args))
+end
