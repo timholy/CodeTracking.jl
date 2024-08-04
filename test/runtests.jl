@@ -52,7 +52,11 @@ isdefined(Main, :Revise) ? Main.Revise.includet("script.jl") : include("script.j
     @test startswith(src, "@inline")
     @test line == 16
     @test @code_string(multilinesig(1, "hi")) == src
-    @test_throws ErrorException("no unique matching method found for the specified argument types") @code_string(multilinesig(1, 2))
+    if Base.VERSION < v"1.11.0-0"
+        @test_throws ErrorException("no unique matching method found for the specified argument types") @code_string(multilinesig(1, 2))
+    else
+        @test_throws "but no method is defined for this combination of argument types" @code_string(multilinesig(1, 2))
+    end
 
     m = first(methods(f50))
     src, line = definition(String, m)
@@ -78,7 +82,8 @@ isdefined(Main, :Revise) ? Main.Revise.includet("script.jl") : include("script.j
     io = PipeBuffer()
     show(io, info)
     str = read(io, String)
-    @test startswith(str, "PkgFiles(CodeTracking [da1fd8a2-8d9e-5ec2-8556-3022fb5608a2]):\n  basedir:")
+    @test startswith(str, "PkgFiles(CodeTracking [da1fd8a2-8d9e-5ec2-8556-3022fb5608a2]):\n  basedir:") ||
+          startswith(str, "PkgFiles(Base.PkgId(Base.UUID(\"da1fd8a2-8d9e-5ec2-8556-3022fb5608a2\"), \"CodeTracking\")):\n  basedir:")
     ioctx = IOContext(io, :compact=>true)
     show(ioctx, info)
     str = read(io, String)
@@ -262,7 +267,7 @@ isdefined(Main, :Revise) ? Main.Revise.includet("script.jl") : include("script.j
     # Issue 115, Cthulhu issue 404
     m = @which (Vector)(Int[])
     src, line = definition(String, m)
-    @test occursin("(Array{T,N} where T)(x::AbstractArray{S,N}) where {S,N}", src)
+    @test occursin(filter(!isspace, "(Array{T,N} where T)(x::AbstractArray{S,N}) where {S,N}"), filter(!isspace, src))
     @test line == m.line
 
     # Issue 115, Cthulhu issue 474
