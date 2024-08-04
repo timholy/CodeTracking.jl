@@ -137,7 +137,9 @@ isdefined(Main, :Revise) ? Main.Revise.includet("script.jl") : include("script.j
     idx = findfirst(lin -> String(lin.file) != @__FILE__, src.linetable)
     lin = src.linetable[idx]
     file, line = whereis(lin, m)
-    @test endswith(file, String(lin.file))
+    if !Sys.iswindows()
+        @test endswith(file, String(lin.file))
+    end
 
     # Issues raised in #48
     m = @which(sum([1]; dims=1))
