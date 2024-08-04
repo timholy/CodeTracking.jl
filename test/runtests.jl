@@ -432,3 +432,8 @@ end
     body, _ = CodeTracking.definition(String, which(diffminmax, (Any,)))
     @test body == "diffminmax((min, max)) = max - min"
 end
+
+@testset "strip_gensym with unicode" begin
+    @test CodeTracking.strip_gensym("#𝓔′#90") == :𝓔′
+    @test CodeTracking.strip_gensym("𝓔′##kw") == :𝓔′
+end
