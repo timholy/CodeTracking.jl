@@ -52,7 +52,11 @@ isdefined(Main, :Revise) ? Main.Revise.includet("script.jl") : include("script.j
     @test startswith(src, "@inline")
     @test line == 16
     @test @code_string(multilinesig(1, "hi")) == src
-    @test_throws ErrorException("no unique matching method found for the specified argument types") @code_string(multilinesig(1, 2))
+    if Base.VERSION < v"1.11.0-0"
+        @test_throws ErrorException("no unique matching method found for the specified argument types") @code_string(multilinesig(1, 2))
+    else
+        @test_throws "but no method is defined for this combination of argument types" @code_string(multilinesig(1, 2))
+    end
 
     m = first(methods(f50))
     src, line = definition(String, m)
@@ -78,7 +82,8 @@ isdefined(Main, :Revise) ? Main.Revise.includet("script.jl") : include("script.j
     io = PipeBuffer()
     show(io, info)
     str = read(io, String)
-    @test startswith(str, "PkgFiles(CodeTracking [da1fd8a2-8d9e-5ec2-8556-3022fb5608a2]):\n  basedir:")
+    @test startswith(str, "PkgFiles(CodeTracking [da1fd8a2-8d9e-5ec2-8556-3022fb5608a2]):\n  basedir:") ||
+          startswith(str, "PkgFiles(Base.PkgId(Base.UUID(\"da1fd8a2-8d9e-5ec2-8556-3022fb5608a2\"), \"CodeTracking\")):\n  basedir:")
     ioctx = IOContext(io, :compact=>true)
     show(ioctx, info)
     str = read(io, String)
@@ -132,7 +137,9 @@ isdefined(Main, :Revise) ? Main.Revise.includet("script.jl") : include("script.j
     idx = findfirst(lin -> String(lin.file) != @__FILE__, src.linetable)
     lin = src.linetable[idx]
     file, line = whereis(lin, m)
-    @test endswith(file, String(lin.file))
+    if !Sys.iswindows()
+        @test endswith(file, String(lin.file))
+    end
 
     # Issues raised in #48
     m = @which(sum([1]; dims=1))
@@ -247,6 +254,12 @@ isdefined(Main, :Revise) ? Main.Revise.includet("script.jl") : include("script.j
     src, line = definition(String, m)
     @test occursin("(::Type{T})(itr) where {T<:Invert}", src)
     @test line == 126
+    m = @which MyArray1{Float64, 1}(undef, 5)
+    src, line = definition(String, m)
+    @test occursin("(self::Type{MyArray1{T,1}})(::UndefInitializer", src)
+    m = @which MyArray2{Float64, 1}(undef, 5)
+    src, line = definition(String, m)
+    @test occursin("(::Type{MyArray2{T,1}})(::UndefInitializer", src)
 
     # Invalidation-insulating methods used by Revise and perhaps others
     d = IdDict{Union{String,Symbol},Union{Function,Vector{Function}}}()
@@ -256,13 +269,13 @@ isdefined(Main, :Revise) ? Main.Revise.includet("script.jl") : include("script.j
     # Issue 115, Cthulhu issue 404
     m = @which (Vector)(Int[])
     src, line = definition(String, m)
-    @test occursin("(Array{T,N} where T)(x::AbstractArray{S,N}) where {S,N}", src)
+    @test occursin(filter(!isspace, "(Array{T,N} where T)(x::AbstractArray{S,N}) where {S,N}"), filter(!isspace, src))
     @test line == m.line
 
     # Issue 115, Cthulhu issue 474
-    m = @which NamedTuple{(),Tuple{}}(())
+    m = @which MyNamedTuple{(),Tuple{}}(())
     src, line = definition(String, m)
-    @test occursin("NamedTuple{names, T}(args::T) where {names, T <: Tuple}", src)
+    @test occursin("MyNamedTuple{names, T}(args::T) where {names, T <: Tuple}", src)
     @test line == m.line
 
     # Parsed result gives a symbol instead of expression
@@ -293,11 +306,13 @@ end
         @test occursin(String(m.file), String(body.args[idx].file))
         @test ex == code_expr(gcd, Tuple{Int,Int})
 
-        m = first(methods(edit))
-        sigs = signatures_at(String(m.file), m.line)
-        @test !isempty(sigs)
-        sigs = signatures_at(Base.find_source_file(String(m.file)), m.line)
-        @test !isempty(sigs)
+        if Base.VERSION < v"1.11.0-0"
+            m = first(methods(edit))
+            sigs = signatures_at(String(m.file), m.line)
+            @test !isempty(sigs)
+            sigs = signatures_at(Base.find_source_file(String(m.file)), m.line)
+            @test !isempty(sigs)
+        end
 
         # issue #23
         @test !isempty(signatures_at("script.jl", 9))
@@ -384,7 +399,9 @@ end
         return m
     end"""
     body, _ = CodeTracking.definition(String, @which Foo.Bar.fit(1, 2))
-    @test body == "Foo.Bar.fit(a, b) = a + b"
+    if Base.VERSION < v"1.10"
+        @test body == "Foo.Bar.fit(a, b) = a + b"
+    end
 end
 
 struct CallOverload
@@ -403,10 +420,10 @@ end
 
 @testset "kwfuncs" begin
     body, _ = CodeTracking.definition(String, @which fkw(; x=1))
-    @test body == """
+    @test startswith(body, """
     function fkw(; x=1)
         x
-    end"""
+    end""")
 end
 
 @testset "Decorated args" begin
@@ -425,12 +442,12 @@ end
     body, _ = CodeTracking.definition(String, which(hasdefault, (Int, Float32)))
     @test body == "hasdefault(xd, yd=2) = xd + yd"
     body, _ = CodeTracking.definition(String, which(hasdefaulttypearg, (Type{Float32},)))
-    @test body == "hasdefaulttypearg(::Type{T}=Rational{Int}) where T = zero(T)"
+    @test startswith(body, "hasdefaulttypearg(::Type{T}=Rational{Int}) where T = zero(T)")
 end
 
 @testset "tuple-destructured args" begin
     body, _ = CodeTracking.definition(String, which(diffminmax, (Any,)))
-    @test body == "diffminmax((min, max)) = max - min"
+    @test startswith(body, "diffminmax((min, max)) = max - min")
 end
 
 @testset "strip_gensym with unicode" begin
