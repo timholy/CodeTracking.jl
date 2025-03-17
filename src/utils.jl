@@ -207,23 +207,36 @@ else
     function linetable_scopes(m::Method)
         src = Base.uncompressed_ast(m)
         lt, cl = src.linetable, src.codelocs
-        return [iszero(cl[pc]) ? Core.LineInfoNode[] : [lt[cl[pc]]] for pc = eachindex(cl)]
+        lts = [Vector{Core.LineInfoNode}() for _ = eachindex(src.code)]
+        for pc = eachindex(src.code)
+            iszero(cl[pc]) && continue
+            scope = lts[pc]
+            push!(scope, lt[cl[pc]])
+            while (k = last(scope).inlined_at) != Int32(0)
+                push!(scope, lt[k])
+            end
+            if length(scope) > 1
+                reverse!(scope)
+            end
+        end
+        return lts
     end
 end
 @doc """
     scopes = linetable_scopes(m::Method)
 
-Return an array of "scopes" for each statement in the lowered code for `m`.
-If `src = Base.uncompressed_ast(m)`, then `scopes[pc]` is an vector of `LineInfoNode`
-objects that represent the scopes active at the statement at position `pc` in `src.code`.
+Return an array of "scopes" for each statement in the lowered code for `m`. If
+`src = Base.uncompressed_ast(m)`, then `scopes[pc]` is an vector of
+`LineInfoNode` objects that represent the scopes active at the statement at
+position `pc` in `src.code`.
 
-On Julia 1.12 and later, `scopes[pc]` may have length larger than 1, where the first entry
-is for the source location in `m`, and any later entries reflect code from inlining.
-It will be a vector of `Base.Compiler.IRShow.LineInfoNode` objects.
+`scopes[pc]` may have length larger than 1, where the first entry is for the
+source location in `m`, and any later entries reflect code from inlining.
 
-Prior to Julia 1.12, `scopes[pc]` will have length 1, and will be a vector of `Core.LineInfoNode`
-objects (which have more fields than `Base.Compiler.IRShow.LineInfoNode`). It will represent
-the final stage of inlining for the statement at position `pc` in `src.code`.
+The precise type of these entries varies with Julia version,
+`Base.Compiler.IRShow.LineInfoNode` objects on Julia 1.12 and up, and
+`Core.LineInfoNode` objects on earlier versions. These objects differ in some of
+their fields. `:method`, `:file`, and `:line` are common to both types.
 """ linetable_scopes
 
 getmethod(m::Method) = m
