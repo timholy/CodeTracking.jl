@@ -49,8 +49,13 @@ jobs:
           TERM="xterm" julia --project -i --code-coverage -e '
             using InteractiveUtils, REPL, Revise, Pkg
             Pkg.add("ColorTypes")
-            @async(Base.run_main_repl(true, true, false, true, false))
-            sleep(2)
+            t = @async(
+              VERSION >= v"1.12.0-DEV.612" ? Base.run_main_repl(true, true, :no, true) :
+              VERSION >= v"1.11.0-DEV.222" ? Base.run_main_repl(true, true, :no, true, false)   :
+                                            Base.run_main_repl(true, true, false, true, false))
+            isdefined(Base, :errormonitor) && Base.errormonitor(t)
+            while (!isdefined(Base, :active_repl_backend) || isnothing(Base.active_repl_backend)) sleep(0.1) end
+            pushfirst!(Base.active_repl_backend.ast_transforms, Revise.revise_first)
             cd("test")
             include("runtests.jl")
             if Base.VERSION.major == 1 && Base.VERSION.minor >= 9

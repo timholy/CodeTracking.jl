@@ -210,6 +210,21 @@ else
         return [iszero(cl[pc]) ? Core.LineInfoNode[] : [lt[cl[pc]]] for pc = eachindex(cl)]
     end
 end
+@doc """
+    scopes = linetable_scopes(m::Method)
+
+Return an array of "scopes" for each statement in the lowered code for `m`.
+If `src = Base.uncompressed_ast(m)`, then `scopes[pc]` is an vector of `LineInfoNode`
+objects that represent the scopes active at the statement at position `pc` in `src.code`.
+
+On Julia 1.12 and later, `scopes[pc]` may have length larger than 1, where the first entry
+is for the source location in `m`, and any later entries reflect code from inlining.
+It will be a vector of `Base.Compiler.IRShow.LineInfoNode` objects.
+
+Prior to Julia 1.12, `scopes[pc]` will have length 1, and will be a vector of `Core.LineInfoNode`
+objects (which have more fields than `Base.Compiler.IRShow.LineInfoNode`). It will represent
+the final stage of inlining for the statement at position `pc` in `src.code`.
+""" linetable_scopes
 
 getmethod(m::Method) = m
 getmethod(mi::Core.MethodInstance) = getmethod(mi.def)
