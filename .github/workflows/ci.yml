@@ -40,7 +40,7 @@ jobs:
           julia -e '
             using Pkg
             Pkg.develop(path=".")
-            Pkg.add(url="https://github.com/timholy/Revise.jl")
+            Pkg.add("Revise")
             Pkg.test("Revise")
           '
       - name: Test while running Revise
