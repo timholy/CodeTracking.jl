@@ -129,13 +129,13 @@ isdefined(Main, :Revise) ? Main.Revise.includet("script.jl") : include("script.j
         @info "hello"
     end
     m = first(methods(f150))
-    src = Base.uncompressed_ast(m)
-    idx = findfirst(lin -> String(lin.file) == @__FILE__, src.linetable)
-    lin = src.linetable[idx]
+    scopes = CodeTracking.linetable_scopes(m)
+    idx = findfirst(sc -> all(lin -> String(lin.file) == @__FILE__, sc), scopes)
+    lin = first(scopes[idx])
     file, line = whereis(lin, m)
     @test endswith(file, String(lin.file))
-    idx = findfirst(lin -> String(lin.file) != @__FILE__, src.linetable)
-    lin = src.linetable[idx]
+    idx = findfirst(sc -> !all(lin -> String(lin.file) == @__FILE__, sc), scopes)
+    lin = first(scopes[idx])
     file, line = whereis(lin, m)
     if !Sys.iswindows()
         @test endswith(file, String(lin.file))

@@ -179,7 +179,7 @@ function linerange(def::Expr)
 end
 linerange(arg) = linerange(convert(Expr, arg))  # Handle Revise's RelocatableExpr
 
-function findline(ex, order)
+function findline(ex::Expr, order)
     ex.head === :line && return ex.args[1], true
     for a in order(ex.args)
         a isa LineNumberNode && return a.line, true
@@ -193,6 +193,27 @@ end
 
 fileline(lin::LineInfoNode)   = String(lin.file), lin.line
 fileline(lnn::LineNumberNode) = String(lnn.file), lnn.line
+
+if VERSION ≥ v"1.12.0-DEV.173"   # https://github.com/JuliaLang/julia/pull/52415
+    function linetable_scopes(m::Method)
+        src = Base.uncompressed_ast(m)
+        lts = [Vector{Base.Compiler.IRShow.LineInfoNode}() for _ = eachindex(src.code)]
+        for pc = eachindex(src.code)
+            Base.IRShow.append_scopes!(lts[pc], pc, src.debuginfo, m)
+        end
+        return lts
+    end
+else
+    function linetable_scopes(m::Method)
+        src = Base.uncompressed_ast(m)
+        lt, cl = src.linetable, src.codelocs
+        return [iszero(cl[pc]) ? Core.LineInfoNode[] : [lt[cl[pc]]] for pc = eachindex(cl)]
+    end
+end
+
+getmethod(m::Method) = m
+getmethod(mi::Core.MethodInstance) = getmethod(mi.def)
+getmethod(ci::Core.CodeInstance) = getmethod(ci.def)
 
 # This regex matches the pseudo-file name of a REPL history entry.
 const rREPL = r"^REPL\[(\d+)\]$"
