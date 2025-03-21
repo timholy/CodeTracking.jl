@@ -310,29 +310,11 @@ function maybe_fix_path(file)
             file = normpath(newfile)
         end
     end
-    return maybe_fixup_stdlib_path(file)
+    return Base.fixup_stdlib_path(file)
 end
 
-safe_isfile(x) = try isfile(x); catch; false end
-const BUILDBOT_STDLIB_PATH = dirname(abspath(String((@which uuid1()).file), "..", "..", ".."))
-replace_buildbot_stdlibpath(str::String) = replace(str, BUILDBOT_STDLIB_PATH => Sys.STDLIB)
-"""
-    path = maybe_fixup_stdlib_path(path::String)
-
-Return `path` corrected for julia issue [#26314](https://github.com/JuliaLang/julia/issues/26314) if applicable.
-Otherwise, return the input `path` unchanged.
-
-Due to the issue mentioned above, location info for methods defined one of Julia's standard libraries
-are, for non source Julia builds, given as absolute paths on the worker that built the `julia` executable.
-This function corrects such a path to instead refer to the local path on the users drive.
-"""
-function maybe_fixup_stdlib_path(path)
-    if !safe_isfile(path)
-        maybe_stdlib_path = replace_buildbot_stdlibpath(path)
-        safe_isfile(maybe_stdlib_path) && return maybe_stdlib_path
-    end
-    return path
-end
+# Some packages use this function
+maybe_fixup_stdlib_path(path) = Base.fixup_stdlib_path(path)
 
 function postpath(filename, pre)
     idx = findfirst(pre, filename)
