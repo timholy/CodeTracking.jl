@@ -98,7 +98,7 @@ Otherwise `loc` will be `(filepath, line)`.
 """
 function whereis(sf::StackTraces.StackFrame)
     sf.linfo === nothing && return nothing
-    return whereis(sf, sf.linfo.def)
+    return whereis(sf, getmethod(sf.linfo))
 end
 
 """
