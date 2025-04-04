@@ -195,8 +195,7 @@ fileline(lin::LineInfoNode)   = String(lin.file), lin.line
 fileline(lnn::LineNumberNode) = String(lnn.file), lnn.line
 
 if VERSION ≥ v"1.12.0-DEV.173"   # https://github.com/JuliaLang/julia/pull/52415
-    function linetable_scopes(m::Method)
-        src = Base.uncompressed_ast(m)
+    function linetable_scopes(src::Core.CodeInfo, m)
         lts = [Vector{Base.Compiler.IRShow.LineInfoNode}() for _ = eachindex(src.code)]
         for pc = eachindex(src.code)
             Base.IRShow.append_scopes!(lts[pc], pc, src.debuginfo, m)
@@ -204,8 +203,7 @@ if VERSION ≥ v"1.12.0-DEV.173"   # https://github.com/JuliaLang/julia/pull/524
         return lts
     end
 else
-    function linetable_scopes(m::Method)
-        src = Base.uncompressed_ast(m)
+    function linetable_scopes(src::Core.CodeInfo, _)
         lt, cl = src.linetable, src.codelocs
         lts = [Vector{Core.LineInfoNode}() for _ = eachindex(src.code)]
         for pc = eachindex(src.code)
@@ -222,7 +220,8 @@ else
         return lts
     end
 end
-@doc """
+
+"""
     scopes = linetable_scopes(m::Method)
 
 Return an array of "scopes" for each statement in the lowered code for `m`. If
@@ -237,7 +236,8 @@ The precise type of these entries varies with Julia version,
 `Base.Compiler.IRShow.LineInfoNode` objects on Julia 1.12 and up, and
 `Core.LineInfoNode` objects on earlier versions. These objects differ in some of
 their fields. `:method`, `:file`, and `:line` are common to both types.
-""" linetable_scopes
+"""
+linetable_scopes(m::Method) = linetable_scopes(Base.uncompressed_ast(m), m)
 
 getmethod(m::Method) = m
 getmethod(mi::Core.MethodInstance) = getmethod(mi.def)
