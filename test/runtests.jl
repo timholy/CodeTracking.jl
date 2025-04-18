@@ -455,3 +455,19 @@ end
     @test CodeTracking.strip_gensym("#𝓔′#90") == :𝓔′
     @test CodeTracking.strip_gensym("𝓔′##kw") == :𝓔′
 end
+
+if isdefined(Base, :Experimental) && isdefined(Base.Experimental, :(var"@MethodTable"))
+
+@testset "External method tables" begin
+    mod = @eval module $(gensym(:ExternalMT))
+        Base.Experimental.@MethodTable method_table
+    end
+    ex = :(Base.Experimental.@overlay method_table +(x::String, y::String) = x * y)
+    method = Core.eval(mod, ex)
+    lnn = LineNumberNode(Int(method.line), method.file)
+    @test CodeTracking.definition(Expr, method) === nothing
+    CodeTracking.method_info[method.external_mt => method.sig] = [(lnn, ex)]
+    @test CodeTracking.definition(Expr, method) == ex
+end
+
+end
