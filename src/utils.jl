@@ -400,5 +400,5 @@ getpkgid(uuid::UUID, libname) = PkgId(uuid, libname)
 # callers vulnerable to invalidation. These convenience utilities allow callers to insulate
 # themselves from invalidation. These are used by Revise.
 # example package triggering invalidation: StaticArrays (new `convert(Type{Array{T,N}}, ::AbstractArray)` methods)
-invoked_setindex!(dct::IdDict{K,V}, @nospecialize(val), @nospecialize(key)) where {K,V} = Base.invokelatest(setindex!, dct, val, key)::typeof(dct)
-invoked_get!(::Type{T}, dct::IdDict{K,V}, @nospecialize(key)) where {K,V,T<:V} = Base.invokelatest(get!, T, dct, key)::V
+invoked_setindex!(dct::IdDict{K,V}, @nospecialize(val), @nospecialize(key)) where {K,V} = Base.invokelatest(setindex!, dct, val, convert(K, key))::typeof(dct)
+invoked_get!(::Type{T}, dct::IdDict{K,V}, @nospecialize(key)) where {K,V,T<:V} = Base.invokelatest(get!, T, dct, convert(K, key))::V

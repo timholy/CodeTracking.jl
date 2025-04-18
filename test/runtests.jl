@@ -101,7 +101,7 @@ isdefined(Main, :Revise) ? Main.Revise.includet("script.jl") : include("script.j
 
     # Test a method marked as missing
     m = @which sum(1:5)
-    CodeTracking.method_info[m.sig] = missing
+    CodeTracking.method_info[nothing => m.sig] = missing
     @test whereis(m) == (CodeTracking.maybe_fix_path(String(m.file)), m.line)
     @test definition(m) === nothing
 
@@ -323,7 +323,8 @@ end
             Revise.add_revise_deps()
             sigs = signatures_at(CodeTracking, "src/utils.jl", 5)
             @test length(sigs) == 1       # only isn't available on julia 1.0
-            @test first(sigs) == Tuple{typeof(CodeTracking.checkname), Expr, Any}
+            (mt, sig) = first(sigs)
+            @test sig == Tuple{typeof(CodeTracking.checkname), Expr, Any}
             @test pkgfiles(CodeTracking).id == Base.PkgId(CodeTracking)
         end
 

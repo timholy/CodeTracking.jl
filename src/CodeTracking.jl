@@ -11,7 +11,7 @@ CodeTracking can be thought of as an extension of InteractiveUtils, and pairs we
 module CodeTracking
 
 using Base: PkgId
-using Core: LineInfoNode
+using Core: LineInfoNode, MethodTable
 using Base.Meta: isexpr
 using UUIDs
 using InteractiveUtils
@@ -29,12 +29,12 @@ include("utils.jl")
 
 # These values get populated by Revise
 
-# `method_info[sig]` is either:
+# `method_info[mt => sig]` is either:
 #   - `missing`, to indicate that the method cannot be located
 #   - a list of `(lnn,ex)` pairs. In almost all cases there will be just one of these,
 #     but "mistakes" in moving methods from one file to another can result in more than
 #     definition. The last pair in the list is the currently-active definition.
-const method_info = IdDict{Type,Union{Missing,Vector{Tuple{LineNumberNode,Expr}}}}()
+const method_info = IdDict{Pair{<:Union{Nothing, MethodTable}, <:Type},Union{Missing,Vector{Tuple{LineNumberNode,Expr}}}}()
 
 const _pkgfiles = Dict{PkgId,PkgFiles}()
 
@@ -58,6 +58,9 @@ const expressions_callback = Ref{Any}(nothing)
 const juliabase = joinpath("julia", "base")
 const juliastdlib = joinpath("julia", "stdlib", "v$(VERSION.major).$(VERSION.minor)")
 
+method_table(method::Method) = isdefined(method, :external_mt) ? method.external_mt::MethodTable : nothing
+method_info_key(method::Method) = method_table(method) => method.sig
+
 ### Public API
 
 """
@@ -70,13 +73,13 @@ the method declaration, otherwise it is the first line of the method's body.
 function whereis(method::Method)
     file, line = String(method.file), method.line
     startswith(file, "REPL[") && return file, line
-    lin = get(method_info, method.sig, nothing)
+    lin = get(method_info, method_info_key(method), nothing)
     if lin === nothing
         f = method_lookup_callback[]
         if f !== nothing
             try
                 Base.invokelatest(f, method)
-                lin = get(method_info, method.sig, nothing)
+                lin = get(method_info, method_info_key(method), nothing)
             catch
             end
         end
@@ -298,13 +301,13 @@ See also [`code_expr`](@ref).
 """
 function definition(::Type{Expr}, method::Method)
     file = String(method.file)
-    def = startswith(file, "REPL[") ? nothing : get(method_info, method.sig, nothing)
+    def = startswith(file, "REPL[") ? nothing : get(method_info, method_info_key(method), nothing)
     if def === nothing
         f = method_lookup_callback[]
         if f !== nothing
             try
                 Base.invokelatest(f, method)
-                def = get(method_info, method.sig, nothing)
+                def = get(method_info, method_info_key(method), nothing)
             catch
             end
         end
