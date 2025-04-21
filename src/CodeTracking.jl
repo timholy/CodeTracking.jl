@@ -33,8 +33,8 @@ include("utils.jl")
 #   - `missing`, to indicate that the method cannot be located
 #   - a list of `(lnn,ex)` pairs. In almost all cases there will be just one of these,
 #     but "mistakes" in moving methods from one file to another can result in more than
-#     definition. The last pair in the list is the currently-active definition.
-const method_info = IdDict{Pair{<:Union{Nothing, MethodTable}, <:Type},Union{Missing,Vector{Tuple{LineNumberNode,Expr}}}}()
+#     one definition. The last pair in the list is the currently-active definition.
+const method_info = IdDict{Pair{Union{Nothing, MethodTable}, Type},Union{Missing,Vector{Tuple{LineNumberNode,Expr}}}}()
 
 const _pkgfiles = Dict{PkgId,PkgFiles}()
 
@@ -59,7 +59,7 @@ const juliabase = joinpath("julia", "base")
 const juliastdlib = joinpath("julia", "stdlib", "v$(VERSION.major).$(VERSION.minor)")
 
 method_table(method::Method) = isdefined(method, :external_mt) ? method.external_mt::MethodTable : nothing
-method_info_key(method::Method) = method_table(method) => method.sig
+method_info_key(method::Method) = Pair{Union{Nothing, MethodTable}, Type}(method_table(method), method.sig)
 
 ### Public API
 

@@ -101,7 +101,7 @@ isdefined(Main, :Revise) ? Main.Revise.includet("script.jl") : include("script.j
 
     # Test a method marked as missing
     m = @which sum(1:5)
-    CodeTracking.method_info[nothing => m.sig] = missing
+    CodeTracking.invoked_setindex!(CodeTracking.method_info, missing, nothing => m.sig)
     @test whereis(m) == (CodeTracking.maybe_fix_path(String(m.file)), m.line)
     @test definition(m) === nothing
 
@@ -466,7 +466,7 @@ if isdefined(Base, :Experimental) && isdefined(Base.Experimental, :(var"@MethodT
     method = Core.eval(mod, ex)
     lnn = LineNumberNode(Int(method.line), method.file)
     @test CodeTracking.definition(Expr, method) === nothing
-    CodeTracking.method_info[method.external_mt => method.sig] = [(lnn, ex)]
+    CodeTracking.invoked_setindex!(CodeTracking.method_info, [(lnn, ex)], method.external_mt => method.sig)
     @test CodeTracking.definition(Expr, method) == ex
 end
 
