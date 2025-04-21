@@ -456,14 +456,19 @@ end
     @test CodeTracking.strip_gensym("𝓔′##kw") == :𝓔′
 end
 
-if isdefined(Base, :Experimental) && isdefined(Base.Experimental, :(var"@MethodTable"))
+@static if isdefined(Base, :Experimental) && isdefined(Base.Experimental, :(var"@MethodTable"))
 
 @testset "External method tables" begin
     mod = @eval module $(gensym(:ExternalMT))
         Base.Experimental.@MethodTable method_table
     end
     ex = :(Base.Experimental.@overlay method_table +(x::String, y::String) = x * y)
-    method = Core.eval(mod, ex)
+    if VERSION ≥ v"1.13-"
+        method = Core.eval(mod, ex)
+    else
+        Core.eval(mod, ex)
+        method = only(Base.MethodList(mod.method_table).ms)
+    end
     lnn = LineNumberNode(Int(method.line), method.file)
     @test CodeTracking.definition(Expr, method) === nothing
     CodeTracking.method_info[MethodInfoKey(method)] = [(lnn, ex)]
