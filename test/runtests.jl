@@ -4,7 +4,7 @@ using CodeTracking
 using Test, InteractiveUtils, REPL, LinearAlgebra, SparseArrays
 # Note: ColorTypes needs to be installed, but note the intentional absence of `using ColorTypes`
 
-using CodeTracking: line_is_decl
+using CodeTracking: line_is_decl, MethodInfoKey
 
 if !isempty(ARGS) && "revise" ∈ ARGS
     # For running tests with and without Revise
@@ -101,7 +101,7 @@ isdefined(Main, :Revise) ? Main.Revise.includet("script.jl") : include("script.j
 
     # Test a method marked as missing
     m = @which sum(1:5)
-    CodeTracking.invoked_setindex!(CodeTracking.method_info, missing, nothing => m.sig)
+    CodeTracking.method_info[MethodInfoKey(nothing, m.sig)] = missing
     @test whereis(m) == (CodeTracking.maybe_fix_path(String(m.file)), m.line)
     @test definition(m) === nothing
 
@@ -466,7 +466,7 @@ if isdefined(Base, :Experimental) && isdefined(Base.Experimental, :(var"@MethodT
     method = Core.eval(mod, ex)
     lnn = LineNumberNode(Int(method.line), method.file)
     @test CodeTracking.definition(Expr, method) === nothing
-    CodeTracking.invoked_setindex!(CodeTracking.method_info, [(lnn, ex)], method.external_mt => method.sig)
+    CodeTracking.method_info[MethodInfoKey(method)] = [(lnn, ex)]
     @test CodeTracking.definition(Expr, method) == ex
 end
 
