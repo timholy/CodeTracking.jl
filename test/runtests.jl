@@ -297,8 +297,8 @@ end
 @testset "With Revise" begin
     if isdefined(Main, :Revise)
         m = @which gcd(10, 20)
-        sigs = signatures_at(Base.find_source_file(String(m.file)), m.line)
-        @test !isempty(sigs)
+        mt_sigs = signatures_at(Base.find_source_file(String(m.file)), m.line)
+        @test !isempty(mt_sigs)
         ex = @code_expr(gcd(10, 20))
         @test ex isa Expr
         body = ex.args[2]
@@ -308,10 +308,10 @@ end
 
         if Base.VERSION < v"1.11.0-0"
             m = first(methods(edit))
-            sigs = signatures_at(String(m.file), m.line)
-            @test !isempty(sigs)
-            sigs = signatures_at(Base.find_source_file(String(m.file)), m.line)
-            @test !isempty(sigs)
+            mt_sigs = signatures_at(String(m.file), m.line)
+            @test !isempty(mt_sigs)
+            mt_sigs = signatures_at(Base.find_source_file(String(m.file)), m.line)
+            @test !isempty(mt_sigs)
         end
 
         # issue #23
@@ -321,9 +321,9 @@ end
 
         if isdefined(Revise, :add_revise_deps)
             Revise.add_revise_deps()
-            sigs = signatures_at(CodeTracking, "src/utils.jl", 5)
-            @test length(sigs) == 1       # only isn't available on julia 1.0
-            (mt, sig) = first(sigs)
+            mt_sigs = signatures_at(CodeTracking, "src/utils.jl", 5)
+            @test length(mt_sigs) == 1       # only isn't available on julia 1.0
+            (mt, sig) = first(mt_sigs)
             @test sig == Tuple{typeof(CodeTracking.checkname), Expr, Any}
             @test pkgfiles(CodeTracking).id == Base.PkgId(CodeTracking)
         end
