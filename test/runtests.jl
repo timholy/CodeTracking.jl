@@ -456,8 +456,6 @@ end
     @test CodeTracking.strip_gensym("𝓔′##kw") == :𝓔′
 end
 
-@static if isdefined(Base, :Experimental) && isdefined(Base.Experimental, :(var"@MethodTable"))
-
 @testset "External method tables" begin
     mod = @eval module $(gensym(:ExternalMT))
         Base.Experimental.@MethodTable method_table
@@ -473,6 +471,4 @@ end
     @test CodeTracking.definition(Expr, method) === nothing
     CodeTracking.method_info[MethodInfoKey(method)] = [(lnn, ex)]
     @test CodeTracking.definition(Expr, method) == ex
-end
-
 end
