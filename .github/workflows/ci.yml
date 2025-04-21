@@ -40,7 +40,8 @@ jobs:
           julia -e '
             using Pkg
             Pkg.develop(path=".")
-            Pkg.add("Revise")
+            pkg"add https://github.com/serenity4/JuliaInterpreter.jl#codetracking-v2 https://github.com/serenity4/LoweredCodeUtils.jl#support-external-methodtables https://github.com/serenity4/Revise.jl#revise-external-methodtables"
+            # Pkg.add("Revise")
             Pkg.test("Revise")
           '
       - name: Test while running Revise
