@@ -61,8 +61,7 @@ const expressions_callback = Ref{Any}(nothing)
 const juliabase = joinpath("julia", "base")
 const juliastdlib = joinpath("julia", "stdlib", "v$(VERSION.major).$(VERSION.minor)")
 
-method_table(method::Method) = isdefined(method, :external_mt) ? method.external_mt::MethodTable : nothing
-MethodInfoKey(method::Method) = MethodInfoKey(method_table(method), method.sig)
+MethodInfoKey(method::Method) = MethodInfoKey(Base.get_methodtable(method), method.sig)
 
 ### Public API
 
