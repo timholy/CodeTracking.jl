@@ -8,7 +8,7 @@ CodeTracking can be thought of as an extension of Julia's
 It provides an interface for obtaining:
 
 - the strings and expressions of method definitions
-- the method signatures at a specific file & line number
+- the method signatures (and their corresponding method table) at a specific file & line number
 - location information for "dynamic" code that might have moved since it was first loaded
 - a list of files that comprise a particular package.
 
@@ -112,17 +112,19 @@ PkgFiles(ColorTypes [3da002f7-5984-5a60-b8a6-cbb66c0b333f]):
 ```
 
 
-You can also find the method-signatures at a particular location:
+You can also find the method signatures at a particular location:
 
 ```julia
 julia> signatures_at(ColorTypes, "src/traits.jl", 14)
-1-element Array{Any,1}:
- Tuple{typeof(red),AbstractRGB}
+1-element Vector{Pair{Union{Nothing, Core.MethodTable}, Type}}:
+ nothing => Tuple{typeof(red),AbstractRGB}
 
 julia> signatures_at("/home/tim/.julia/packages/ColorTypes/BsAWO/src/traits.jl", 14)
-1-element Array{Any,1}:
- Tuple{typeof(red),AbstractRGB}
+1-element Vector{Pair{Union{Nothing, Core.MethodTable}, Type}}:
+ nothing => Tuple{typeof(red),AbstractRGB}
 ```
+
+with the first element being the method table for which the method was added (a value of `nothing` denotes the default method table).
 
 CodeTracking also helps correcting for [Julia issue #26314](https://github.com/JuliaLang/julia/issues/26314):
 

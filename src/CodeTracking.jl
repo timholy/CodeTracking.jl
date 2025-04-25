@@ -6,12 +6,12 @@ CodeTracking can be thought of as an extension of InteractiveUtils, and pairs we
 - `definition`: a lower-level variant of the above
 - `pkgfiles`: return information about the source files that define a package
 - `whereis`: Return location information about methods (with Revise, it updates as you edit files)
-- `signatures_at`: return the signatures of all methods whose definition spans the specified location
+- `signatures_at`: return the signatures (and the corresponding method table) of all methods whose definition spans the specified location
 """
 module CodeTracking
 
 using Base: PkgId
-using Core: LineInfoNode
+using Core: LineInfoNode, MethodTable
 using Base.Meta: isexpr
 using UUIDs
 using InteractiveUtils
@@ -29,12 +29,15 @@ include("utils.jl")
 
 # These values get populated by Revise
 
-# `method_info[sig]` is either:
+# `method_info[mt => sig]` is either:
 #   - `missing`, to indicate that the method cannot be located
 #   - a list of `(lnn,ex)` pairs. In almost all cases there will be just one of these,
 #     but "mistakes" in moving methods from one file to another can result in more than
-#     definition. The last pair in the list is the currently-active definition.
-const method_info = IdDict{Type,Union{Missing,Vector{Tuple{LineNumberNode,Expr}}}}()
+#     one definition. The last pair in the list is the currently-active definition.
+
+const MethodInfoKey = Pair{Union{Nothing, MethodTable}, Type}
+
+const method_info = IdDict{MethodInfoKey,Union{Missing,Vector{Tuple{LineNumberNode,Expr}}}}()
 
 const _pkgfiles = Dict{PkgId,PkgFiles}()
 
@@ -51,32 +54,33 @@ const method_lookup_callback = Ref{Any}(nothing)
 #    id is the PkgId of the corresponding package
 #    relpath is the path of the file from the basedir of `id`
 #    mod is the "active" module at that point in the source
-#    exsigs is a ex=>sigs dictionary, where `ex` is the source expression and `sigs`
-#        a list of method-signatures defined by that expression.
+#    exsigs is a `ex => mt_sigs` dictionary, where `ex` is the source expression and `mt_sigs`
+#        a list of `method_table => signature` pairs defined by that expression.
 const expressions_callback = Ref{Any}(nothing)
 
 const juliabase = joinpath("julia", "base")
 const juliastdlib = joinpath("julia", "stdlib", "v$(VERSION.major).$(VERSION.minor)")
+
+method_table(method::Method) = isdefined(method, :external_mt) ? method.external_mt::MethodTable : nothing
+MethodInfoKey(method::Method) = MethodInfoKey(method_table(method), method.sig)
 
 ### Public API
 
 """
     filepath, line = whereis(method::Method)
 
-Return the file and line of the definition of `method`. The meaning of `line`
-depends on the Julia version: on Julia 1.5 and higher it is the line number of
-the method declaration, otherwise it is the first line of the method's body.
+Return the file and line of the definition of `method`.
 """
 function whereis(method::Method)
     file, line = String(method.file), method.line
     startswith(file, "REPL[") && return file, line
-    lin = get(method_info, method.sig, nothing)
+    lin = get(method_info, MethodInfoKey(method), nothing)
     if lin === nothing
         f = method_lookup_callback[]
         if f !== nothing
             try
                 Base.invokelatest(f, method)
-                lin = get(method_info, method.sig, nothing)
+                lin = get(method_info, MethodInfoKey(method), nothing)
             catch
             end
         end
@@ -134,11 +138,9 @@ function whereis(lineinfo::Core.LineInfoNode, method::Method)
 end
 
 """
-    sigs = signatures_at(filename, line)
+    mt_sigs = signatures_at(filename, line)
 
-Return the signatures of all methods whose definition spans the specified location.
-Prior to Julia 1.5, `line` must correspond to a line in the method body
-(not the signature or final `end`).
+Return the `method_table => signature` pairs of all methods whose definition spans the specified location.
 
 Returns `nothing` if there are no methods at that location.
 """
@@ -175,11 +177,11 @@ function signatures_at(filename::AbstractString, line::Integer)
 end
 
 """
-    sigs = signatures_at(mod::Module, relativepath, line)
+    mt_sigs = signatures_at(mod::Module, relativepath, line)
 
-For a package that defines module `mod`, return the signatures of all methods whose definition
-spans the specified location. `relativepath` indicates the path of the file relative to
-the packages top-level directory, e.g., `"src/utils.jl"`.
+For a package that defines module `mod`, return the `method_table => signature` pairs of
+all methods whose definition spans the specified location. `relativepath` indicates the
+path of the file relative to the packages top-level directory, e.g., `"src/utils.jl"`.
 `line` must correspond to a line in the method body (not the signature or final `end`).
 
 Returns `nothing` if there are no methods at that location.
@@ -194,10 +196,10 @@ function signatures_at(id::PkgId, relpath::AbstractString, line::Integer)
     expressions === nothing && error("cannot look up methods by line number, try `using Revise` before loading other packages")
     try
         for (mod, exsigs) in Base.invokelatest(expressions, id, relpath)
-            for (ex, sigs) in exsigs
+            for (ex, mt_sigs) in exsigs
                 lr = linerange(ex)
                 lr === nothing && continue
-                line ∈ lr && return sigs
+                line ∈ lr && return mt_sigs
             end
         end
     catch
@@ -298,13 +300,13 @@ See also [`code_expr`](@ref).
 """
 function definition(::Type{Expr}, method::Method)
     file = String(method.file)
-    def = startswith(file, "REPL[") ? nothing : get(method_info, method.sig, nothing)
+    def = startswith(file, "REPL[") ? nothing : get(method_info, MethodInfoKey(method), nothing)
     if def === nothing
         f = method_lookup_callback[]
         if f !== nothing
             try
                 Base.invokelatest(f, method)
-                def = get(method_info, method.sig, nothing)
+                def = get(method_info, MethodInfoKey(method), nothing)
             catch
             end
         end
