@@ -116,13 +116,15 @@ You can also find the method-signatures at a particular location:
 
 ```julia
 julia> signatures_at(ColorTypes, "src/traits.jl", 14)
-1-element Array{Any,1}:
- Tuple{typeof(red),AbstractRGB}
+1-element Vector{Pair{Union{Nothing, Core.MethodTable}, Type}}:
+ nothing => Tuple{typeof(red),AbstractRGB}
 
 julia> signatures_at("/home/tim/.julia/packages/ColorTypes/BsAWO/src/traits.jl", 14)
-1-element Array{Any,1}:
- Tuple{typeof(red),AbstractRGB}
+1-element Vector{Pair{Union{Nothing, Core.MethodTable}, Type}}:
+ nothing => Tuple{typeof(red),AbstractRGB}
 ```
+
+with the first element being the method table for which the method has been defined (a value of `nothing` denotes the default method table).
 
 CodeTracking also helps correcting for [Julia issue #26314](https://github.com/JuliaLang/julia/issues/26314):
 
