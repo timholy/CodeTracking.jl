@@ -72,7 +72,7 @@ isdefined(Main, :Revise) ? Main.Revise.includet("script.jl") : include("script.j
     info = CodeTracking.PkgFiles(Base.PkgId(CodeTracking), nothing)
     @test isempty(CodeTracking.basedir(info))
 
-    info = CodeTracking.PkgFiles(Base.PkgId(CodeTracking), [])
+    info = CodeTracking.PkgFiles(Base.PkgId(CodeTracking), String[])
     @test length(CodeTracking.srcfiles(info)) == 0
 
     info = CodeTracking.PkgFiles(Base.PkgId(CodeTracking))
@@ -87,7 +87,7 @@ isdefined(Main, :Revise) ? Main.Revise.includet("script.jl") : include("script.j
     ioctx = IOContext(io, :compact=>true)
     show(ioctx, info)
     str = read(io, String)
-    @test match(r"PkgFiles\(CodeTracking, .*CodeTracking(\.jl)?, Any\[\]\)", str) !== nothing
+    @test match(r"PkgFiles\(CodeTracking, .*CodeTracking(\.jl)?, String\[\]\)", str) !== nothing
 
     @test pkgfiles("ColorTypes") === nothing
     @test_throws ErrorException pkgfiles("NotAPkg")
