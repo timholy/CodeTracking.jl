@@ -4,7 +4,7 @@ using CodeTracking
 using Test, InteractiveUtils, REPL, LinearAlgebra, SparseArrays
 # Note: ColorTypes needs to be installed, but note the intentional absence of `using ColorTypes`
 
-using CodeTracking: line_is_decl, MethodInfoKey
+using CodeTracking: line_is_decl, MethodInfoKey, MapExprFile
 
 if !isempty(ARGS) && "revise" ∈ ARGS
     # For running tests with and without Revise
@@ -292,6 +292,27 @@ isdefined(Main, :Revise) ? Main.Revise.includet("script.jl") : include("script.j
     src, line = definition(String, m)
     @test occursin("::Type{P}", src)
     @test line == 148
+end
+
+@testset "MapExprFile" begin
+    mapfile = MapExprFile(identity, "testfile.jl")
+    @test String(mapfile) == "testfile.jl"
+    @test sprint(show, mapfile) == "MapExprFile(identity, \"testfile.jl\")"
+    mappath = joinpath("base", mapfile)
+    @test mappath == MapExprFile(identity, joinpath("base", "testfile.jl"))
+    @test abspath(mapfile) == MapExprFile(identity, abspath("testfile.jl"))
+    @test normpath(mapfile) == MapExprFile(identity, normpath("testfile.jl"))
+    @test relpath(mappath, "base") == mapfile
+    @test isabspath(mapfile) == false
+    @test ispath(mapfile) == false
+    @test isfile(mapfile) == false
+    open(mapfile, "w") do io
+        write(io, "test content")
+    end
+    @test isabspath(mapfile) == false
+    @test ispath(mapfile) == true
+    @test isfile(mapfile) == true
+    rm(mapfile)
 end
 
 @testset "With Revise" begin
